@@ -1,0 +1,45 @@
+/* src/components/ContentHeader.css - NEW THEME */
+
+.content-header-container {
+    height: 70px; /* Slightly taller header */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 30px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.user-info-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    color: #374151; /* Darker text */
+}
+
+.user-info-section .user-icon {
+    font-size: 2rem; /* Larger icon */
+    color: #d1d5db; /* Lighter gray for placeholder */
+    background-color: #f3f4f6;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.mobile-menu-button { display: none; }
+
+@media (max-width: 768px) {
+    .content-header-container {
+        justify-content: space-between;
+        padding: 0 15px;
+    }
+    .mobile-menu-button {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        color: #374151;
+        cursor: pointer;
+    }
+}

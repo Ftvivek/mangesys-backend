@@ -1,0 +1,62 @@
+/* src/components/BottomNavBar.css --- POLISHED --- */
+
+.bottom-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.nav-items-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 65px; /* Good height for touch targets */
+    padding: 5px 0; /* Add some vertical padding */
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    text-decoration: none;
+    color: #6b7280; /* Muted gray for inactive icons */
+    transition: color 0.2s ease-in-out, transform 0.1s ease;
+    padding: 5px 0;
+}
+
+/* A subtle effect when tapping a nav item */
+.nav-item:active {
+    transform: scale(0.95);
+}
+
+.nav-icon {
+    font-size: 24px; /* Slightly larger icon */
+    margin-bottom: 3px;
+}
+
+.nav-label {
+    font-size: 12px; /* Slightly larger, more readable text */
+    font-weight: 500;
+}
+
+/* Style for the active NavLink */
+.nav-item.active {
+    color: #4f46e5; /* A nice indigo for the active icon */
+}
+
+/* Resetting button styles to make it look like a nav item */
+.nav-item-button {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    cursor: pointer;
+}

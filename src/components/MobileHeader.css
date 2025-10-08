@@ -1,0 +1,38 @@
+/* src/components/MobileHeader.css --- NEW POLISHED VERSION --- */
+
+.mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    /* NEW: Subtle shadow and border for separation */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 1000;
+    height: 60px;
+    box-sizing: border-box; 
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    height: 100%;
+}
+
+.welcome-message {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.profile-icon-link {
+    font-size: 28px;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

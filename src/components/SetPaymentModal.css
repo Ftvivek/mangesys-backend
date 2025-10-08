@@ -1,0 +1,61 @@
+/* src/components/SetPaymentModal.css - NEW THEME */
+.modal-overlay {
+    position: fixed; inset: 0; background-color: rgba(17, 24, 39, 0.6);
+    display: flex; justify-content: center; align-items: center; z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-container {
+    background: white; padding: 25px 30px 30px; border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    width: 90%; max-width: 450px; z-index: 1001;
+    border: 1px solid #e5e7eb;
+}
+
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 15px; margin-bottom: 20px;
+}
+.modal-header h2 { margin: 0; font-size: 1.25rem; color: #111827; font-weight: 600; }
+.close-button {
+    background: none; border: none; font-size: 1.8rem; cursor: pointer;
+    color: #9ca3af; transition: color 0.2s ease;
+}
+.close-button:hover { color: #374151; }
+
+.form-group label {
+    display: block; margin-bottom: 8px; font-weight: 500; color: #374151;
+    font-size: 0.9rem;
+}
+.form-group input {
+    width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px;
+    box-sizing: border-box; font-size: 1rem; background-color: #f9fafb;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus {
+    outline: none; border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.modal-actions {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;
+}
+.button-cancel, .button-submit {
+    padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+    font-weight: 600; font-size: 0.95rem;
+}
+.button-cancel {
+    background-color: transparent; color: #374151;
+    border: 1px solid #d1d5db;
+}
+.button-cancel:hover { background-color: #f3f4f6; border-color: #9ca3af; }
+.button-submit { background-color: #6366f1; color: white; }
+.button-submit:hover { background-color: #4f46e5; }
+.button-submit:disabled { background-color: #a5b4fc; cursor: not-allowed; }
+
+.error-message, .success-message {
+    margin-top: 15px; font-size: 0.9em; padding: 10px; border-radius: 6px;
+    text-align: center;
+}
+.error-message { color: #ef4444; background-color: #fee2e2; }
+.success-message { color: #10b981; background-color: #d1fae5; }

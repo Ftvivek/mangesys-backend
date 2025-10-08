@@ -1,0 +1,200 @@
+/* src/components/RemindersPage.css - NEW THEME */
+.reminders-container {
+    background-color: #ffffff;
+    padding: 35px 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    border: 1px solid #e5e7eb;
+}
+
+.reminders-container h1 {
+    color: #111827;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.reminders-container .description {
+    color: #4b5563;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    text-align: center;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-box {
+    background-color: #f8f9fe;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.stat-box h2 {
+    font-size: 2.5rem;
+    margin: 0 0 10px 0;
+    color: #111827;
+    font-weight: 700;
+}
+
+.stat-box p { margin: 0; color: #4b5563; font-weight: 500; }
+.stat-box.success h2 { color: #10b981; }
+.stat-box.error h2 { color: #ef4444; }
+
+.error-message { color: #ef4444; font-weight: bold; }
+
+.failed-list {
+    margin-top: 30px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 20px;
+}
+
+.failed-list h3 { text-align: center; margin-bottom: 20px; color: #111827; }
+
+.failed-list table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.failed-list th, .failed-list td { padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+.failed-list tr:last-child td { border-bottom: none; }
+.failed-list th { background-color: #f9fafb; color: #6b7280; font-weight: 600; }
+
+
+/* ADD THIS CSS TO THE END OF RemindersPage.css */
+
+.due-list-container, .status-summary-container {
+    margin-top: 40px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 30px;
+}
+
+.due-list-container h3, .status-summary-container h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #1f2937;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.due-list-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.due-list-container th, .due-list-container td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+.due-list-container tr:last-child td { border-bottom: none; }
+.due-list-container th {
+    background-color: #f9fafb;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.send-reminder-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #6366f1;
+    background-color: #eef2ff;
+    color: #6366f1;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.send-reminder-btn:hover:not(:disabled) {
+    background-color: #6366f1;
+    color: white;
+}
+.send-reminder-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-sending {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+    color: white;
+}
+.btn-sent {
+    background-color: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+.btn-error {
+    background-color: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+/* ADD THIS CSS TO THE END OF RemindersPage.css */
+
+.reminders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.header-title h1 { margin-bottom: 0.25rem; }
+
+.automation-toggle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align items */
+    gap: 0.75rem;
+    background-color: #f9fafb;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    min-width: 220px;
+}
+
+.automation-toggle-container label { font-weight: 600; color: #374151; font-size: 0.9rem; }
+.automation-toggle-container span { font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px; }
+.status-active { color: #16a34a; } /* Green */
+.status-inactive { color: #dc2626; } /* Red */
+
+.toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: #2563eb; }
+input:focus + .slider { box-shadow: 0 0 1px #2563eb; }
+input:checked + .slider:before { transform: translateX(26px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+
+/* ADD THIS TO THE END of RemindersPage.css */
+
+.view-logs-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: center; /* Aligns well with the header */
+}
+
+.view-logs-btn:hover {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+}

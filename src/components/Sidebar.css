@@ -1,0 +1,84 @@
+/* src/components/Sidebar.css --- COMPLETE AND CORRECTED --- */
+
+.sidebar {
+    display: flex;
+    flex-direction: column; /* This is key for footer placement */
+    height: 100vh;
+    width: 260px;
+    background-color: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    position: sticky; /* Makes the sidebar stay in place while content scrolls */
+    top: 0;
+}
+
+.sidebar-header {
+    padding: 1.5rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sidebar-logo {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+}
+
+.sidebar-nav {
+    flex-grow: 1; /* This makes the nav section take up all available space */
+    padding: 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* Space between links */
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #4b5563;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover {
+    background-color: #f3f4f6; /* Light gray on hover */
+    color: #1f2937;
+}
+
+/* This is the style for the active page link */
+.nav-link.active {
+    background-color: #4f46e5; /* Indigo */
+    color: #ffffff;
+}
+
+.nav-icon {
+    margin-right: 1rem;
+    font-size: 1.1rem;
+}
+
+/* --- Button Styling --- */
+/* This class makes a <button> look just like a <NavLink> */
+.as-button {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* --- Footer and Logout Button Styling --- */
+/* This pushes the logout button to the very bottom */
+.sidebar-footer {
+    padding: 1rem;
+    margin-top: auto; /* This is the magic property */
+    border-top: 1px solid #f3f4f6;
+}
+
+.logout-button {
+    width: 100%;
+}

@@ -1,0 +1,156 @@
+/* SearchBar.css - "Gilded Compass" Theme - INLINE RESULTS VERSION */
+
+:root {
+  --font-serif-display: 'Cormorant Garamond', serif;
+  --font-sans-ui: 'Lato', sans-serif;
+  --color-surface: #fdfaf6;
+  --color-border-subtle: #e8e4dd;
+  --color-text-dark: #3a352f;
+  --color-text-secondary: #8a8174;
+  --color-accent-gold: #c59d5f;
+  --shadow-focus-gold: 0 0 0 4px rgba(197, 157, 95, 0.3);
+  --shadow-soft-diffuse: 0 5px 20px rgba(58, 53, 47, 0.1);
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Search Bar Container & The Bar Itself --- */
+.search-bar-container {
+    padding: 12px 24px 8px 24px; 
+    position: relative;
+    z-index: 5; /* Keep it above calendar elements if needed */
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-surface);
+    border-radius: 9999px;
+    padding: 8px 10px 8px 24px;
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-soft-diffuse);
+    transition: box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
+}
+.search-bar:focus-within {
+    border-color: var(--color-accent-gold);
+    box-shadow: var(--shadow-soft-diffuse), var(--shadow-focus-gold);
+}
+
+.search-input {
+    /* --- Core Functionality --- */
+    flex-grow: 1; /* Allows it to take up available space */
+    width: 100%;  /* Ensures it fills the flex space */
+
+    /* --- Removing ALL Default Browser Styles --- */
+    -webkit-appearance: none; /* For older Safari/Chrome */
+    -moz-appearance: none;    /* For Firefox */
+    appearance: none;         /* Standard property */
+    border: none;             /* Explicitly remove any border */
+    outline: none;            /* Remove the focus outline */
+    background: transparent;  /* Use the parent's background */
+    
+    /* --- Font & Text Styling --- */
+    font-family: var(--font-sans-ui);
+    font-size: 1rem;
+    color: var(--color-text-dark);
+    
+    /* --- Spacing & Cleanup --- */
+    padding: 8px 0;
+    margin: 0;
+}
+
+/* This part is also important */
+.search-input::placeholder {
+    color: var(--color-text-dark);
+    opacity: 0.5;
+}
+
+.search-button {
+    background-color: transparent;
+    border: none;
+    padding: 10px;
+    margin-left: 4px;
+    cursor: pointer;
+    color: var(--color-accent-gold);
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease-out;
+}
+.search-button:hover {
+    background-color: rgba(197, 157, 95, 0.1);
+}
+.search-button:active {
+    transform: scale(0.9);
+}
+
+/* --- Inline Search Results Styling (THE FIX) --- */
+.search-results-container {
+    padding: 16px 24px 24px;
+    text-align: center;
+    /* Animate its appearance */
+    animation: fadeIn-down 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.results-title {
+    font-family: var(--font-serif-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    margin: 0 0 8px 0;
+}
+
+.no-results-message {
+    font-family: var(--font-sans-ui);
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    margin: 0 0 16px 0;
+}
+
+.close-search-button {
+    font-family: var(--font-sans-ui);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-accent-gold);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+.close-search-button:hover {
+    color: #a57c40; /* Darker gold for hover */
+}
+
+/* Optional: Styling for when results are found */
+.student-result-item {
+    padding: 14px 16px;
+    text-align: left;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.student-result-item:hover {
+    background-color: var(--color-surface);
+    border-color: var(--color-accent-gold);
+}
+
+/* --- Animation --- */
+@keyframes fadeIn-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,20 @@
+/* src/components/MobileLayout.css --- HARD RESET VERSION --- */
+
+.mobile-layout {
+  background-color: #f8f9fa; /* Off-white page background */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-main-content {
+  /* Padding to avoid the fixed header and bottom nav */
+  padding: 70px 15px 80px 15px;
+
+  /* THIS IS THE KEY: Makes this area grow to fill all available empty space */
+  flex-grow: 1;
+
+  /* This tells the children (like the Calendar) how to behave inside */
+  display: flex;
+  flex-direction: column;
+}

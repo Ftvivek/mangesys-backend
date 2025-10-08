@@ -1,0 +1,81 @@
+/* src/components/MoreOptionsMenu.css */
+
+.more-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1100;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Aligns the menu to the bottom */
+
+    /* Animation */
+    animation: fadeIn 0.3s ease-out;
+}
+
+.more-menu-content {
+    background-color: white;
+    width: 100%;
+    max-width: 500px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 20px;
+    padding-bottom: 40px; /* Extra padding at the bottom */
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+
+    /* Animation */
+    animation: slideUp 0.3s ease-out;
+}
+
+.more-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 15px 10px;
+    text-decoration: none;
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.menu-link:hover, .menu-link:active {
+    background-color: #f3f4f6;
+}
+
+.menu-icon {
+    margin-right: 15px;
+    color: #6b7280;
+    font-size: 20px;
+}
+
+/* Resetting button styles */
+.menu-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+
+/* Keyframe animations for smooth appearance */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}

@@ -1,0 +1,40 @@
+/* src/components/DesktopHeader.css */
+
+.desktop-header {
+    height: 70px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    background-color: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    box-sizing: border-box;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.welcome-text {
+    font-size: 0.9rem;
+    color: #4b5563;
+    font-weight: 500;
+}
+
+.profile-link {
+    display: flex;
+    align-items: center;
+    color: #6b7280;
+}
+
+.profile-icon {
+    font-size: 2rem;
+    transition: color 0.2s ease;
+}
+
+.profile-link:hover .profile-icon {
+    color: #4f46e5;
+}

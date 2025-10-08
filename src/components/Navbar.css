@@ -1,0 +1,189 @@
+/* --- Main Navbar: A Statement Piece --- */
+.navbar {
+    background-color: var(--color-brand-primary);
+    color: var(--color-text-on-primary);
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 990;
+    /* Replaces shadow with a classic, elegant border */
+    border-bottom: 2px solid var(--color-brand-accent);
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.menu-button {
+    background: transparent;
+    border: 2px solid transparent; /* Prepare for hover state */
+    color: var(--color-text-on-primary);
+    font-size: 1.5rem; 
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+}
+.menu-button:hover {
+    border-color: rgba(197, 157, 95, 0.5);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.navbar-user-section .welcome-message {
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+/* --- Side Menu & Overlay: The Library Annex --- */
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(31, 42, 56, 0.7);
+    backdrop-filter: blur(4px); /* Creative blur effect */
+    z-index: 998;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.side-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px; /* Slightly wider for a more premium feel */
+    height: 100vh;
+    background-color: var(--color-brand-primary);
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform var(--transition-smooth);
+    display: flex;
+    flex-direction: column;
+    /* A border to tie it to the navbar's aesthetic */
+    border-right: 2px solid var(--color-brand-accent);
+    box-shadow: 5px 0 30px rgba(13, 13, 13, 0.2);
+}
+
+.side-menu.active {
+    transform: translateX(0);
+}
+
+/* --- Side Menu Content: Bespoke Details --- */
+.side-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    min-height: 64px;
+    border-bottom: 1px solid rgba(197, 157, 95, 0.2);
+}
+
+.side-menu-header h3 {
+    margin: 0;
+    color: var(--color-text-on-primary);
+    font-family: var(--font-serif-display);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.close-menu-button {
+    background: none;
+    border: none;
+    color: var(--color-text-on-primary);
+    font-size: 1.75rem;
+    cursor: pointer;
+    padding: 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.close-menu-button:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+.side-menu-links {
+    list-style: none;
+    padding: 24px 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+/* The creative hover effect for menu items */
+.side-menu-item {
+    display: block;
+    position: relative; /* Crucial for the pseudo-element */
+    width: 100%;
+    padding: 18px 28px;
+    color: var(--color-text-on-primary);
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.3s ease;
+}
+/* The underline animation */
+.side-menu-item::before {
+    content: '';
+    position: absolute;
+    bottom: 10px; /* Position the line nicely below the text */
+    left: 28px;
+    width: 0;
+    height: 2px;
+    background-color: var(--color-brand-accent);
+    transition: width var(--transition-smooth);
+}
+.side-menu-item:hover {
+    color: var(--color-brand-accent);
+}
+.side-menu-item:hover::before {
+    width: calc(100% - 56px); /* (100% - 2 * padding-left) */
+}
+
+/* --- Logout Button: A Distinct Action --- */
+.side-menu-item.logout {
+    margin: 24px 28px;
+    padding: 16px;
+    border: 1px solid var(--color-status-error);
+    color: var(--color-status-error);
+    border-radius: 4px;
+    text-align: center;
+    width: auto; /* Override default width */
+    transition: all 0.3s ease;
+}
+.side-menu-item.logout::before {
+    display: none; /* No underline animation for the button */
+}
+.side-menu-item.logout:hover {
+    background-color: var(--color-status-error);
+    color: var(--color-text-on-primary);
+    border-color: var(--color-status-error);
+}
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+  .welcome-message {
+    /* Reduce the font size on smaller screens */
+    font-size: 14px; 
+    /* Or you could hide it completely if you want more space */
+    /* display: none; */ 
+  }
+}

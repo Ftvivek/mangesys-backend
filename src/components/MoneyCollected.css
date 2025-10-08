@@ -1,0 +1,151 @@
+/* MoneyCollected.css (Revised for Premium/Classic Look) */
+
+  .money-collected-container {
+    padding: 1.25rem 1.5rem; /* Adjust padding as needed */
+    background-color: var(--color-background-surface);
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--shadow-soft);
+    font-family: var(--money-font-primary);
+    border: 1px solid var(--color-border-secondary); /* Add a subtle border */
+    margin-bottom: 20px; /* Ensure spacing from other elements */
+  }
+  
+  /* --- Header Section --- */
+  .money-collected-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border-secondary);
+  }
+  
+  .money-collected-header h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: 1.15em; /* Slightly smaller */
+    font-weight: 600; /* Semibold */
+  }
+  
+  .date-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .date-selector label {
+    font-size: 0.9em;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+  
+  .date-selector input[type="date"] {
+    padding: 5px 8px;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: 5px; /* Slightly smaller radius */
+    font-size: 0.9em;
+    background-color: var(--color-background-surface-alt);
+    color: var(--color-text-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .date-selector input[type="date"]:focus {
+    outline: none;
+    border-color: var(--color-brand-accent);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2); /* Example focus ring */
+  }
+  .date-selector input[type="date"]:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      background-color: #f0f0f0;
+  }
+  
+  
+  /* --- Body Section (Where Amounts Are Displayed) --- */
+  /* --- Body Section (Where Amounts Are Displayed) --- */
+.money-collected-body {
+  display: flex;
+  flex-direction: row; /* This is the key: Ensures side-by-side on desktop */
+  justify-content: space-around;
+  gap: 1.5rem;
+  padding-top: 1rem;
+  text-align: center;
+  min-height: 80px;
+}
+  .collection-section {
+    flex: 1; /* Allow sections to grow equally */
+    padding: 1rem;
+    background-color: var(--color-background-surface-alt); /* Subtle background for sections */
+    border-radius: var(--border-radius-medium);
+    border: 1px solid #f0f0f0; /* Even lighter border for sections */
+  }
+  
+  .collection-section h4 {
+    margin: 0 0 0.75rem;
+    color: var(--color-text-primary);
+    font-size: 1em;
+    font-weight: 600; /* Semibold */
+  }
+  
+  .collection-section p {
+    margin: 0.25rem 0; /* Reduced margin */
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    font-size: 1.1em; /* Make amount slightly larger */
+    font-weight: 500; /* Medium weight for amount */
+  }
+  
+  /* Style the label part differently if needed */
+
+  
+  .collection-section p.count-details {
+    font-size: 0.85em; /* Smaller font for count */
+    color: var(--color-text-secondary);
+    font-weight: 400; /* Normal weight */
+    margin-top: 5px;
+  }
+  
+  
+  /* --- Loading and Error States --- */
+  .money-collected-body p {
+    /* General styling for loading/error text when they are the only content */
+    width: 100%;
+    text-align: center;
+    font-style: italic;
+    color: var(--color-text-secondary);
+  }
+  
+  .money-collected-body p.error-message {
+    color: #dc3545; /* Standard error red */
+    font-weight: 500;
+    font-style: normal;
+  }
+  
+  /* Remove unused styles from the old version */
+  /* .collection-options, .collected-amounts, .total-label { ... } */
+  /* ADD THIS to the end of MoneyCollected.css */
+
+/* --- Responsive Fix for Mobile View --- */
+
+/* This is a media query. The styles inside it will ONLY apply
+   when the screen width is 600px or less. */
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+  .money-collected-header {
+    /* Stack the title and the date selector */
+    flex-direction: column;
+    align-items: flex-start; /* Align them to the left */
+    gap: 10px; /* Add some space between them */
+  }
+
+  .money-collected-body {
+    /* Stack the CASH and ONLINE boxes */
+    flex-direction: column;
+    gap: 15px; /* Add space between the boxes */
+  }
+
+  .collection-section {
+    /* Make each box take up the full width */
+    width: 100%;
+  }
+}

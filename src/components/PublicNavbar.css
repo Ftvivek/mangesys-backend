@@ -1,0 +1,38 @@
+/* src/components/PublicNavbar.css - Themed Version */
+.public-navbar {
+    background-color: var(--color-brand-primary);
+    color: var(--color-text-on-primary);
+    padding: 12px 24px;
+    border-bottom: 2px solid var(--color-brand-accent); /* Match main navbar */
+}
+
+.public-navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.public-navbar-brand a {
+    color: var(--color-text-on-primary);
+    text-decoration: none;
+    font-size: 1.5rem; /* Larger brand name */
+    font-family: var(--font-serif-display);
+    font-weight: 700;
+}
+
+.public-navbar-actions .public-navbar-contact-link {
+    color: var(--color-text-on-primary);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid var(--color-text-on-primary);
+    border-radius: var(--border-radius-small);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.public-navbar-actions .public-navbar-contact-link:hover {
+    background-color: var(--color-text-on-primary);
+    color: var(--color-brand-primary);
+}

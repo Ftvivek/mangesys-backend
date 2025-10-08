@@ -1,0 +1,93 @@
+/* src/index.css -- The Single Source of Truth for Your App's Theme */
+
+/* --- 1. FONTS --- */
+/* We import the fonts here so they are available globally. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Lato:wght@400;700&display=swap');
+
+/* --- 2. A SIMPLE, MODERN CSS RESET --- */
+/* This ensures your app looks consistent across all browsers. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- 3. THEME VARIABLES (The "Scholar's Desk" Palette) --- */
+/* This is now the ONLY place these variables will be defined. */
+:root {
+  /* Typography */
+  --font-serif-display: 'Cormorant Garamond', serif;
+  --font-sans-ui: 'Lato', sans-serif;
+
+  /* Core Colors */
+  --color-background-page: #fdfaf6;      /* Parchment background */
+  --color-background-surface: #ffffff;    /* White for cards, modals */
+  --color-background-surface-alt: #f8f9fa; /* Off-white for subtle contrast */
+  
+  /* Text Colors */
+  --color-text-primary: #1d1d1f;        /* Near-black for main text */
+  --color-text-secondary: #6e6e73;      /* Gray for secondary text/labels */
+  --color-text-on-primary: #f0e8dd;     /* Off-white text for dark backgrounds */
+  --color-text-on-accent: #ffffff;      /* Pure white for colored buttons */
+
+  /* Primary Brand/Accent Colors */
+  --color-brand-primary: #1f2a38;        /* Navy-Charcoal for Navbar, etc. */
+  --color-brand-accent: #c59d5f;         /* The rich, burnished gold */
+  --color-brand-accent-hover: #b38b50;   /* A darker gold for hover states */
+
+  /* Status & Action Colors */
+  --color-status-success: #28a745;       /* A clear, accessible green */
+  --color-status-success-bg: #d4edda;
+  --color-status-error: #dc3545;         /* A standard, clear red */
+  --color-status-error-bg: #f8d7da;
+  --color-status-warning: #ffc107;       /* A vibrant yellow/orange */
+
+  /* Borders & Shadows */
+  --color-border-primary: #e0d9cf;      /* The main, classic border color */
+  --color-border-secondary: #e5e5e5;     /* A softer border for inputs, etc. */
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.15);
+  --shadow-focus-ring: 0 0 0 3px rgba(197, 157, 95, 0.4); /* Gold focus ring */
+  
+  /* Sizing & Transitions */
+  --border-radius-small: 4px;
+  --border-radius-medium: 8px;
+  --border-radius-large: 16px;
+  --transition-fast: 0.2s ease-out;
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- 4. GLOBAL FOUNDATIONAL STYLES --- */
+/* These styles apply to the whole application. */
+body {
+  font-family: var(--font-sans-ui);
+  background-color: var(--color-background-page);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global button reset for consistency */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Global link style */
+a {
+  color: var(--color-brand-accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+  color: var(--color-brand-accent-hover);
+}
+
+/* Global focus state for better accessibility */
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
+  border-radius: var(--border-radius-small);
+}

@@ -1,0 +1,124 @@
+/* src/components/LogsPage.css --- NEW FILE --- */
+
+.logs-container {
+    background-color: #ffffff;
+    padding: 30px 35px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    width: 100%;
+    max-width: 1200px; /* Wider for tables */
+    margin: 0 auto;
+    border: 1px solid #e5e7eb;
+}
+
+.logs-container h1 {
+    text-align: center;
+    color: #111827;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.log-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+    background-color: #f9fafb;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.filter-group input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.fetch-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    background-color: #4f46e5;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.fetch-btn:hover { background-color: #4338ca; }
+.fetch-btn:disabled { background-color: #a5b4fc; cursor: not-allowed; }
+
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.logs-table th, .logs-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.logs-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.log-status {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.log-status.sent {
+    background-color: #dcfce7;
+    color: #166534;
+}
+.log-status.failed {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+.log-status.attempted {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.no-logs-message {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* ADD THIS TO THE END of LogsPage.css */
+
+.logs-summary {
+    text-align: right;
+    margin-bottom: 15px;
+    color: #4b5563;
+}
+
+.logs-summary p {
+    margin: 0;
+    font-size: 0.9rem;
+}

@@ -1,0 +1,17 @@
+/* src/components/StatusDot.css */
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-top: 4px; /* Adjust based on new position in Calendar.js if needed */
+}
+
+.red-dot {
+  background-color: var(--color-status-error);
+}
+
+.green-dot {
+  background-color: var(--color-status-success);
+}

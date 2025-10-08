@@ -1,0 +1,101 @@
+/* src/components/LoginPage.css - Themed Version */
+.login-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.login-form-wrapper {
+    background-color: var(--color-background-surface);
+    padding: 40px; /* More padding */
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--shadow-medium);
+    border: 1px solid var(--color-border-primary);
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+}
+
+.login-form-wrapper h2 {
+    font-family: var(--font-serif-display);
+    margin-bottom: 30px;
+    color: var(--color-text-primary);
+    font-size: 2.25rem; /* Larger, more elegant heading */
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700; /* Bolder label */
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-medium);
+    font-size: 1rem;
+    background-color: var(--color-background-surface-alt);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.login-button {
+    width: 100%;
+    padding: 14px 15px;
+    background-color: var(--color-brand-primary); /* Navy-Charcoal button */
+    color: var(--color-text-on-primary);
+    border-radius: var(--border-radius-medium);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: 10px;
+    transition: opacity var(--transition-fast);
+}
+
+.login-button:hover {
+    opacity: 0.9;
+}
+
+.login-button:disabled {
+    background-color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+.error-message {
+    color: var(--color-status-error);
+    background-color: var(--color-status-error-bg);
+    border: 1px solid var(--color-status-error);
+    padding: 10px;
+    border-radius: var(--border-radius-small);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.extra-links {
+    margin-top: 25px;
+    font-size: 0.9rem;
+}
+
+/* ADD THIS to the end of LoginPage.css */
+.public-footer {
+    margin-top: 30px;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+.public-footer a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+}
+.public-footer a:hover {
+    text-decoration: underline;
+}

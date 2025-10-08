@@ -1,0 +1,9 @@
+node_modules
+.env
+npm-debug.log
+Dockerfile
+.dockerignore
+// uploads/ *.log
+// check it when there is something error in your project will happen
+ *.env
+ 

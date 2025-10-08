@@ -1,0 +1,125 @@
+/* src/components/AllStudentList.css --- NEW TAB-BASED STYLING --- */
+
+.all-students-list-container {
+  background-color: #ffffff;
+  padding: 30px 35px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  border: 1px solid #e5e7eb;
+}
+
+.all-students-list-container h2 {
+  color: #111827;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* --- Search Bar --- */
+.all-students-list-container .search-bar-container {
+    padding-bottom: 25px;
+}
+.all-students-list-container .search-bar {
+    max-width: 100%;
+    box-shadow: none;
+    background-color: #f9fafb;
+}
+
+/* --- NEW: Tab Navigation Styles --- */
+.tabs-container {
+    display: flex;
+    gap: 10px;
+    border-bottom: 2px solid #f3f4f6;
+    margin-bottom: 25px;
+}
+
+.tab-button {
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6b7280; /* Gray for inactive tabs */
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    transform: translateY(2px); /* Align with the bottom border */
+}
+
+.tab-button:hover {
+    color: #374151;
+}
+
+.tab-button.active {
+    color: #4f46e5; /* Indigo for active tab */
+    border-bottom-color: #4f46e5;
+}
+
+/* --- List Styling (remains similar) --- */
+.student-list {
+  list-style: none;
+  padding: 0;
+}
+
+.student-item {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+.student-item:last-child {
+  border-bottom: none;
+}
+.student-item:hover {
+    background-color: #f9fafb;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.student-info {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.no-members-message {
+    background-color: #f9fafb;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 20px;
+}
+
+/* ADD THIS TO THE END of AllStudentList.css */
+
+.make-active-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #15803d; /* Dark green border */
+    background-color: #dcfce7; /* Light green background */
+    color: #166534; /* Dark green text */
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-left: auto; /* Push the button to the right */
+    transition: all 0.2s ease;
+}
+
+.make-active-btn:hover {
+    background-color: #16a34a; /* Green */
+    color: white;
+    border-color: #15803d;
+}
