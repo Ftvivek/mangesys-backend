@@ -1,5 +1,4 @@
-// src/components/MobileLayout.js --- UPDATED TO ACCEPT PROPS ---
-
+// src/components/MobileLayout.js --- VERIFIED FIX ---
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import MobileHeader from './MobileHeader';
@@ -7,15 +6,14 @@ import BottomNavBar from './BottomNavBar';
 import MoreOptionsMenu from './MoreOptionsMenu';
 import './MobileLayout.css';
 
-// Accept props from App.js
 const MobileLayout = ({ user, onLogout }) => {
     const [isMoreMenuOpen, setMoreMenuOpen] = useState(false);
 
     return (
         <div className="mobile-layout">
-            {/* Pass the user prop to the Header */}
             <MobileHeader user={user} />
 
+            {/* The <Outlet/> must be a DIRECT child of mobile-main-content */}
             <main className="mobile-main-content">
                 <Outlet />
             </main>
@@ -25,7 +23,7 @@ const MobileLayout = ({ user, onLogout }) => {
             <MoreOptionsMenu 
                 isOpen={isMoreMenuOpen}
                 onClose={() => setMoreMenuOpen(false)}
-                onLogout={onLogout} // Pass the logout handler from props
+                onLogout={onLogout}
             />
         </div>
     );

@@ -29,17 +29,52 @@
 
 .mobile-menu-button { display: none; }
 
+/* src/components/Calendar.css --- REPLACE THE ENTIRE MEDIA QUERY WITH THIS --- */
+
+
+/* --- 2. MOBILE-SPECIFIC STYLES (DEFINITIVE OVERRIDE) --- */
 @media (max-width: 768px) {
-    .content-header-container {
-        justify-content: space-between;
-        padding: 0 15px;
-    }
-    .mobile-menu-button {
-        display: block;
-        background: none;
+
+    /*
+     * RULE 1: Force the main container to be a full-height flex column.
+     * This overrides any conflicting styles from other files.
+    */
+    .mobile-layout .mobile-main-content > .calendar-page-container {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* This makes it fill the vertical space */
+        box-shadow: none;
         border: none;
-        font-size: 1.8rem;
-        color: #374151;
-        cursor: pointer;
+        border-radius: 0;
+        padding: 1rem;
+    }
+
+    /*
+     * RULE 2: Force the grid of days to grow and distribute its rows.
+     * This is the key to fixing the vertical spacing.
+    */
+    .mobile-layout .mobile-main-content .calendar-grid:not(.weekdays) {
+        flex-grow: 1; /* Allow this grid to expand vertically */
+        display: grid; /* Ensure it's a grid */
+        grid-auto-rows: 1fr; /* This distributes the space between rows */
+    }
+
+    /*
+     * RULE 3: Force the days to have no minimum height.
+     * This allows them to be sized by the grid.
+    */
+    .mobile-layout .mobile-main-content .calendar-day {
+        min-height: 0;
+        font-size: 0.9rem;
+    }
+
+    /* Minor visual tweaks */
+    .calendar-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .calendar-day.today span:first-of-type {
+        width: 28px;
+        height: 28px;
     }
 }

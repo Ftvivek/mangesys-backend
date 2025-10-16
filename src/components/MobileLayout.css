@@ -1,20 +1,37 @@
-/* src/components/MobileLayout.css --- HARD RESET VERSION --- */
+/* src/components/MobileLayout.css --- FINAL PERFECT VERSION --- */
 
 .mobile-layout {
-  background-color: #f8f9fa; /* Off-white page background */
-  min-height: 100vh;
+  background-color: #f8f9fa;
+  width: 100vw;
+  height: 100vh;
+
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Avoid scrollbars on outer layout */
 }
 
+/* Main content area that holds the calendar */
 .mobile-main-content {
-  /* Padding to avoid the fixed header and bottom nav */
-  padding: 70px 15px 80px 15px;
-
-  /* THIS IS THE KEY: Makes this area grow to fill all available empty space */
   flex-grow: 1;
+  margin: 0;
 
-  /* This tells the children (like the Calendar) how to behave inside */
+  /* ✅ Safe spacing for both top header and bottom footer */
+  padding: 55px 0 65px 0; /* top = header height, bottom = footer height */
+
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* allow scroll inside */
+  box-sizing: border-box;
+}
+
+/* Calendar container */
+.calendar-page-container {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
