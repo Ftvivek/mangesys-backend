@@ -1,101 +1,178 @@
-/* src/components/LoginPage.css - Themed Version */
+/* src/components/LoginPage.css - FINAL VERSION with ENHANCED MOBILE VIEW */
+
 .login-page-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    width: 100%;
+    min-height: 100%;
+    background-color: var(--color-background-page);
     padding: 20px;
 }
 
-.login-form-wrapper {
+.login-container {
+    width: 100%;
+    max-width: 960px;
+    min-height: 620px;
+    display: flex;
     background-color: var(--color-background-surface);
-    padding: 40px; /* More padding */
-    border-radius: var(--border-radius-medium);
-    box-shadow: var(--shadow-medium);
-    border: 1px solid var(--color-border-primary);
-    width: 100%;
-    max-width: 420px;
-    text-align: center;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
 }
 
-.login-form-wrapper h2 {
-    font-family: var(--font-serif-display);
-    margin-bottom: 30px;
-    color: var(--color-text-primary);
-    font-size: 2.25rem; /* Larger, more elegant heading */
-    font-weight: 700;
+/* --- 1. Left "Hero" Panel (Desktop) --- */
+.login-hero-panel {
+    flex-basis: 45%;
+    background: linear-gradient(135deg, #4f46e5, #3c34b1);
+    padding: 50px 45px;
+    color: var(--color-text-on-primary);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.form-group {
+.hero-content .hero-asterisk {
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1;
     margin-bottom: 20px;
-    text-align: left;
+}
+.login-hero-panel h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+.login-hero-panel p {
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.8;
+    max-width: 350px;
+}
+.login-hero-panel footer {
+    font-size: 0.8rem;
+    opacity: 0.7;
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 700; /* Bolder label */
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
+/* --- 2. Right "Form" Panel (Desktop) --- */
+.login-form-panel {
+    flex-basis: 55%;
+    padding: 40px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
-
-.form-group input[type="text"],
-.form-group input[type="password"] {
+.form-content {
+    max-width: 380px;
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--color-border-secondary);
+    margin: 0 auto;
+}
+.form-logo {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+    margin-bottom: 40px;
+}
+.login-form-panel h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 30px;
+}
+
+/* --- 3. Form Element Styling --- */
+.form-group { margin-bottom: 20px; }
+.form-group input {
+    width: 100%;
+    padding: 14px 16px; 
+    border: 1px solid var(--color-border-primary);
+    background-color: var(--color-background-surface-alt);
     border-radius: var(--border-radius-medium);
     font-size: 1rem;
-    background-color: var(--color-background-surface-alt);
+    color: var(--color-text-primary);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
-
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-brand-primary);
+    box-shadow: var(--shadow-focus-ring);
+}
 .login-button {
     width: 100%;
-    padding: 14px 15px;
-    background-color: var(--color-brand-primary); /* Navy-Charcoal button */
+    padding: 14px;
+    background-color: #111827;
     color: var(--color-text-on-primary);
     border-radius: var(--border-radius-medium);
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 600;
     margin-top: 10px;
     transition: opacity var(--transition-fast);
 }
+.login-button:hover { opacity: 0.85; }
 
-.login-button:hover {
-    opacity: 0.9;
-}
-
-.login-button:disabled {
-    background-color: var(--color-text-secondary);
-    cursor: not-allowed;
-}
-
-.error-message {
-    color: var(--color-status-error);
-    background-color: var(--color-status-error-bg);
-    border: 1px solid var(--color-status-error);
-    padding: 10px;
-    border-radius: var(--border-radius-small);
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-}
-
-.extra-links {
+/* --- 4. Form Footer Styling --- */
+.form-footer {
     margin-top: 25px;
+    text-align: center;
     font-size: 0.9rem;
+    color: var(--color-text-secondary);
 }
+.form-footer p { margin-bottom: 12px; }
+.form-footer a { color: var(--color-brand-primary); text-decoration: none; font-weight: 500; }
+.form-footer a:hover { text-decoration: underline; }
+.public-legal-links { margin-top: 30px; font-size: 0.8rem; }
+.public-legal-links a { color: var(--color-text-secondary); font-weight: 400; }
 
-/* ADD THIS to the end of LoginPage.css */
-.public-footer {
-    margin-top: 30px;
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-}
-.public-footer a {
-    color: var(--color-text-secondary);
-    text-decoration: none;
-}
-.public-footer a:hover {
-    text-decoration: underline;
+/* 
+=====================================================
+--- 5. ENHANCED Responsive Design for Mobile ---
+=====================================================
+*/
+@media (max-width: 850px) {
+    /* The login card now stacks vertically */
+    .login-container {
+        flex-direction: column;
+        min-height: auto;
+        max-width: 420px; /* A good width for mobile forms */
+        box-shadow: var(--shadow-medium); /* Ensure shadow is visible on mobile */
+    }
+
+    /* 
+      THIS IS THE KEY CHANGE:
+      Instead of hiding the hero panel, we are restyling it 
+      to become a compact, branded header for the form.
+    */
+    .login-hero-panel {
+        display: flex; /* This OVERRIDES the old "display: none" */
+        flex-basis: auto; /* Reset desktop basis */
+        min-height: 180px; /* Give it a shorter, fixed height */
+        padding: 30px;
+        align-items: center; /* Center content vertically */
+        justify-content: center; /* Center content horizontally */
+        text-align:left;
+    }
+
+    /* Adjust hero content for the smaller header space */
+    .login-hero-panel .hero-content {
+        padding: 0;
+    }
+    .login-hero-panel h1 {
+        font-size: 2.2rem;
+        line-height: 1.1;
+        margin: 0;
+    }
+    
+    /* Hide non-essential text to keep the header clean */
+    .login-hero-panel .hero-asterisk,
+    .login-hero-panel p, 
+    .login-hero-panel footer {
+        display: none;
+    }
+    
+    /* Adjust form panel padding for mobile */
+    .login-form-panel {
+        flex-basis: auto;
+        padding: 40px 30px;
+    }
 }

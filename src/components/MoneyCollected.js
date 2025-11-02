@@ -1,26 +1,27 @@
 // src/components/MoneyCollected.js
-// --- COMPLETE MODIFIED VERSION ---
+// --- REWIRED TO USE total_money TABLE and new API endpoint ---
 
 import React, { useState, useEffect } from 'react';
 import './MoneyCollected.css';
 import { getWithAuth } from '../utils/api'; 
 
-const getTodayDateString = () => new Date().toLocaleDateString('en-CA');
+const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
-// --- CHANGE 1: ACCEPT THE `refreshSignal` PROP ---
 const MoneyCollected = ({ user, refreshSignal }) => {
     const [cashAmount, setCashAmount] = useState(0);
-    const [onlineAmount, setOnlineAmount] = useState(0);
-    const [cashStudentCount, setCashStudentCount] = useState(0);
-    const [onlineStudentCount, setOnlineStudentCount] = useState(0);
+    const [upiAmount, setUpiAmount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selectedDate, setSelectedDate] = useState(getTodayDateString());
     
-    const paymentPerStudent = parseFloat(user?.set_payment) || 500;
-
     useEffect(() => {
-        const fetchCollectionData = async () => {
+        const fetchTransactionData = async () => {
             if (!selectedDate) {
                 setError("Please select a valid date.");
                 return;
@@ -28,32 +29,20 @@ const MoneyCollected = ({ user, refreshSignal }) => {
             setIsLoading(true);
             setError(null);
             
-            // Reset values before fetching
             setCashAmount(0);
-            setOnlineAmount(0);
-            setCashStudentCount(0);
-            setOnlineStudentCount(0);
+            setUpiAmount(0);
 
             try {
-                const response = await getWithAuth(`/api/collection/${selectedDate}`);
+                // Use the new API endpoint
+                const response = await getWithAuth(`/api/transactions/summary/${selectedDate}`);
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 const data = await response.json();
 
-                // --- Correct Calculation Logic ---
-                const regularCashTotal = data.regularCashCount * paymentPerStudent;
-                const finalCashAmount = regularCashTotal + data.newAdmissionTotalAmount;
-                setCashAmount(finalCashAmount);
-
-                const finalCashCount = data.regularCashCount + data.newAdmissionCount;
-                setCashStudentCount(finalCashCount);
-
-                const finalOnlineAmount = data.regularOnlineCount * paymentPerStudent;
-                setOnlineAmount(finalOnlineAmount);
-                
-                setOnlineStudentCount(data.regularOnlineCount);
+                setCashAmount(data.totalCash);
+                setUpiAmount(data.totalUpi);
 
             } catch (err) {
-                console.error("Failed to fetch collection data:", err);
+                console.error("Failed to fetch transaction data:", err);
                 setError(err.message || 'Failed to fetch data.');
             } finally {
                 setIsLoading(false);
@@ -61,14 +50,13 @@ const MoneyCollected = ({ user, refreshSignal }) => {
         };
 
         if (user) {
-            fetchCollectionData();
+            fetchTransactionData();
         }
-    // --- CHANGE 2: ADD `refreshSignal` TO THE DEPENDENCY ARRAY ---
-    }, [selectedDate, user, paymentPerStudent, refreshSignal]);
+    }, [selectedDate, user, refreshSignal]);
 
     const handleDateChange = (event) => setSelectedDate(event.target.value);
 
-    const displayTitle = selectedDate === getTodayDateString() ? "Today's Collection" : `Collection for ${selectedDate}`;
+    const displayTitle = selectedDate === getTodayDateString() ? "Today's Transactions" : `Transactions for ${selectedDate}`;
 
     return (
         <div className="money-collected-container">
@@ -93,12 +81,10 @@ const MoneyCollected = ({ user, refreshSignal }) => {
                         <div className="collection-section">
                             <h4>CASH</h4>
                             <p>Amount Collected: ₹{cashAmount.toFixed(2)}</p>
-                            <p className="count-details">({cashStudentCount} student{cashStudentCount !== 1 ? 's' : ''})</p>
                         </div>
                         <div className="collection-section">
-                             <h4>ONLINE</h4>
-                             <p>Amount Collected: ₹{onlineAmount.toFixed(2)}</p>
-                             <p className="count-details">({onlineStudentCount} student{onlineStudentCount !== 1 ? 's' : ''})</p>
+                             <h4>ONLINE / UPI</h4>
+                             <p>Amount Collected: ₹{upiAmount.toFixed(2)}</p>
                         </div>
                     </>
                 )}

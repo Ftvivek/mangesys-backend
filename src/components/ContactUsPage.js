@@ -6,7 +6,7 @@ import { FaPhone, FaEnvelope, FaUserTie } from 'react-icons/fa';
 const ContactUsPage = () => {
     const adminName = "Vivek Pal";
     const phoneNumber = "9322354326";
-    const emailAddress = "mivansindustries@gmail.com";
+    const emailAddress = "mangesys@mivansindustries.space";
 
     return (
         <div className="contact-us-container">

@@ -1,15 +1,15 @@
-/* src/components/Calendar.css --- DESKTOP-ONLY STYLES --- */
+/* src/components/Calendar.css --- FINAL MODERN & BALANCED DESIGN --- */
 
 .calendar-page-container {
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e7eb;
+    background-color: var(--color-background-surface);
+    border-radius: var(--border-radius-large);
+    padding: 1.5rem 2rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--color-border-primary);
 }
 .calendar-header {
     display: flex;
@@ -20,7 +20,8 @@
 .calendar-header h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: #1f2937;
+    font-weight: 600;
+    color: var(--color-text-primary);
     flex-grow: 1;
     text-align: center;
 }
@@ -29,34 +30,34 @@
     border: none;
     cursor: pointer;
     font-size: 1.2rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     padding: 0.5rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-fast);
 }
-.nav-button:hover { background-color: #f3f4f6; }
+.nav-button:hover { background-color: var(--color-background-surface-alt); }
 .today-button {
-    padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background-color: #ffffff;
-    color: #4f46e5;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-small);
+    background-color: var(--color-background-surface);
+    color: var(--color-brand-primary);
     font-weight: 600;
     cursor: pointer;
     margin: 0 auto 1.5rem auto;
     display: block;
-    transition: background-color 0.2s;
+    transition: all var(--transition-fast);
 }
-.today-button:hover { background-color: #f9fafb; }
+.today-button:hover { background-color: var(--color-brand-light-bg); border-color: var(--color-brand-primary); }
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     margin-bottom: 1rem;
     font-weight: 600;
-    color: #9ca3af;
+    color: var(--color-text-secondary);
     text-align: center;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -69,22 +70,31 @@
 }
 .calendar-day {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column; /* Stack number and dot vertically */
+    align-items: center;      /* Center horizontally */
+    justify-content: center;    /* Center vertically */
     min-height: 90px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-medium);
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-fast);
     position: relative;
     font-weight: 500;
     font-size: 1rem;
+    color: var(--color-text-secondary); /* Default day text color */
 }
 .calendar-day.empty { cursor: default; background-color: transparent; }
-.calendar-day:not(.empty):hover { background-color: #f3f4f6; }
-.calendar-day.today span:first-of-type {
-    background-color: #4f46e5;
-    color: white;
+.calendar-day:not(.empty):hover { background-color: var(--color-background-surface-alt); }
+
+/* Style for the day number itself */
+.calendar-day > span:first-of-type {
+    color: var(--color-text-primary); /* Make the number a stronger color */
+    font-weight: 500;
+}
+
+/* Refined style for the 'Today' marker */
+.calendar-day.today > span:first-of-type {
+    background-color: var(--color-brand-primary);
+    color: var(--color-text-on-primary);
     border-radius: 50%;
     width: 32px;
     height: 32px;
@@ -97,7 +107,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    margin-top: 5px;
+    margin-top: 5px; /* Adds space BETWEEN the number and the dot */
 }
-.status-dot.pending { background-color: #ef4444; }
-.status-dot.paid { background-color: #10b981; }
+.status-dot.pending { background-color: var(--color-status-error); }
+.status-dot.paid { background-color: var(--color-status-success); }

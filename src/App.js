@@ -6,23 +6,25 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // --- Corrected Component Imports ---
 import MainLayout from './components/MainLayout';
 import MobileLayout from './components/MobileLayout';
-import Calendar from './components/Calendar'; // Corrected
+import Calendar from './components/Calendar';
 import LoginPage from './components/LoginPage';
 import RegistrationPage from './components/RegistrationPage';
 import StudentManagement from './components/StudentManagement';
-import StudentProfile from './components/StudentProfile'; // Corrected
-import AdminUserManagementPage from './components/AdminUserManagementPage'; // Corrected
+import StudentProfile from './components/StudentProfile';
+import AdminUserManagementPage from './components/AdminUserManagementPage';
 import SubscriptionExpiredPage from './components/SubscriptionExpiredPage';
 import SetPaymentModal from './components/SetPaymentModal';
-import AddStudentForm from './components/AddStudentForm'; // Corrected
-import AllStudentList from './components/AllStudentList'; // Corrected
+import AddStudentForm from './components/AddStudentForm';
+import AllStudentList from './components/AllStudentList';
 import ContactUsPage from './components/ContactUsPage';
-import SettingsPage from './components/SettingsPage'; // Corrected
+import SettingsPage from './components/SettingsPage';
 import RemindersPage from './components/RemindersPage';
 import AdminProfilePage from './components/AdminProfilePage';
 import LogsPage from './components/LogsPage';
 import PrivacyPolicyPage from './components/PrivacyPolicyPage';
 import TermsAndConditionsPage from './components/TermsAndConditionsPage';
+import FinancialReportPage from './components/FinancialReportPage'; 
+import MoneyCollected from './components/MoneyCollected'; // Import MoneyCollected
 
 // --- Import Utilities and Hooks ---
 import { isAuthenticated, getUserData, logout as authLogout } from './utils/auth';
@@ -75,7 +77,6 @@ function App() {
                 <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
                 <Route path="/register" element={<RegistrationPage />} />
                 
-                {/* --- ADDED NEW PUBLIC ROUTES --- */}
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
                 
@@ -99,8 +100,11 @@ function App() {
                     <Route path="manage" element={<StudentManagement onPaymentSuccess={triggerCalendarRefresh} />} />
                     <Route path="student-profile/:id" element={<StudentProfile />} />
                     <Route path="subscription-expired" element={<SubscriptionExpiredPage />} />
+                    <Route path="financial-report" element={<FinancialReportPage />} />
                     <Route path="reminders" element={<RemindersPage />} />
                     <Route path="logs" element={<LogsPage />} />
+                    {/* --- NEW TRANSACTION ROUTE --- */}
+                    <Route path="transactions" element={<MoneyCollected user={user} refreshSignal={calendarRefreshSignal} />} />
                     <Route path="admin" element={<AdminRouteWrapper />} />
                 </Route>
 

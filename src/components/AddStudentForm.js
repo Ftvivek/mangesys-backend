@@ -1,8 +1,7 @@
-// src/components/AddStudentForm.js
-// --- REVISED AS A PAGE COMPONENT ---
+// src/components/AddStudentForm.js --- UPDATED WITH ADMISSION FEE IN ADVANCED MODE ---
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import './AddStudentForm.css';
 import { postWithAuth } from '../utils/api';
 
@@ -12,10 +11,10 @@ const UploadIcon = () => (
     </svg>
 );
 
-// The component no longer needs `onClose`
 const AddStudentForm = ({ onStudentAdded }) => {
-    const navigate = useNavigate(); // Hook for navigation
+    const navigate = useNavigate();
 
+    const [formType, setFormType] = useState('simple');
     const [name, setName] = useState('');
     const [admissionDate, setAdmissionDate] = useState('');
     const [mobileNo, setMobileNo] = useState('');
@@ -30,7 +29,6 @@ const AddStudentForm = ({ onStudentAdded }) => {
     const [idProofName, setIdProofName] = useState('');
     const [uploading, setUploading] = useState(false);
     const [submissionError, setSubmissionError] = useState('');
-    const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
     const handleMobileChange = (event) => {
         const value = event.target.value;
@@ -50,77 +48,102 @@ const AddStudentForm = ({ onStudentAdded }) => {
             setSubmissionError('Please fill in all required fields (*).');
             return;
         }
-        if (mobileNo.length !== 10 || !/^\d*$/.test(mobileNo)) {
-            setSubmissionError('Mobile number must be a 10-digit number.');
-            return;
-        }
         setUploading(true);
         const formData = new FormData();
+        
+        // Append common fields
         formData.append('name', trimmedName);
         formData.append('admissionDate', admissionDate);
         formData.append('mobile_no', mobileNo);
-        if (admissionFee) formData.append('admissionFee', admissionFee);
         if (address.trim()) formData.append('address', address.trim());
         if (grade.trim()) formData.append('grade', grade.trim());
-        if (showAdditionalInfo) {
+        if (memberPhoto) formData.append('student_photo', memberPhoto);
+        if (idProof) formData.append('id_proof', idProof);
+
+        // --- CHANGE 1: Fee handling logic updated ---
+        // Always check for and append the one-time admission fee, regardless of form type.
+        if (admissionFee) formData.append('admissionFee', admissionFee);
+
+        // Append recurring plan fields ONLY if the advanced form is selected.
+        if (formType === 'advanced') {
             if (customMonthlyFee) formData.append('feeAmount', customMonthlyFee);
             if (planDuration) formData.append('planDuration', planDuration);
-            if (memberPhoto) formData.append('student_photo', memberPhoto);
-            if (idProof) formData.append('id_proof', idProof);
         }
+
         try {
             const response = await postWithAuth('/api/students', formData);
             if (response.ok) {
-                if(onStudentAdded) onStudentAdded(); // Trigger calendar refresh
-                navigate('/'); // Navigate to dashboard on success
+                if(onStudentAdded) onStudentAdded();
+                navigate('/');
             } else {
-                const errorData = await response.json().catch(() => ({ error: 'Server error.' }));
-                setSubmissionError(errorData.error || `Failed to add member. Status: ${response.status}.`);
+                const errorData = await response.json();
+                setSubmissionError(errorData.error || 'Failed to add member.');
             }
         } catch (error) {
-            if (error.message && !error.message.includes('Authentication failed')) {
-                setSubmissionError('Failed to connect to the server.');
-            }
+            setSubmissionError('Failed to connect to the server.');
         } finally {
             setUploading(false);
         }
     };
 
+    // --- CHANGE 2: To avoid duplicating code, create a reusable JSX element for the Admission Fee input ---
+    const admissionFeeInput = (
+        <div className="form-group">
+            <label>Admission Fee</label>
+            <input type="number" value={admissionFee} onChange={(e) => setAdmissionFee(e.target.value)} min="0" placeholder="One-time fee" />
+        </div>
+    );
+
     return (
-        // The overlay div is removed. We only need the container.
         <div className="add-student-form-container">
             <h2>Add New Member</h2>
-            {/* The close button is removed. */}
+
+            <div className="form-toggle-tabs">
+                <button type="button" className={`tab-button ${formType === 'simple' ? 'active' : ''}`} onClick={() => setFormType('simple')}>
+                    Simple Registration
+                </button>
+                <button type="button" className={`tab-button ${formType === 'advanced' ? 'active' : ''}`} onClick={() => setFormType('advanced')}>
+                    Advanced (Custom Plan)
+                </button>
+            </div>
+
             <form onSubmit={handleSubmit} noValidate>
-                <div className="form-group"><label>Full Name <span className="required">*</span></label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></div>
-                <div className="form-group"><label>Mobile No. <span className="required">*</span></label><input type="tel" value={mobileNo} onChange={handleMobileChange} required maxLength="10" /></div>
-                <div className="form-group"><label>Admission Date <span className="required">*</span></label><input type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} required /></div>
-                <hr className="form-divider" />
-                <div className="form-group"><label>Admission Fee Amount</label><input type="number" value={admissionFee} onChange={(e) => setAdmissionFee(e.target.value)} min="0" placeholder="e.g., 1500" /></div>
-                <div className="form-group"><label>Address</label><textarea value={address} onChange={(e) => setAddress(e.target.value)} rows="3"></textarea></div>
-                <div className="form-group"><label>Description </label><input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} /></div>
-                <div className="additional-info-toggle" onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}>
-                    {showAdditionalInfo ? '▼ Hide' : '► Show'} Additional Information (for Custom Recurring Plans)
+                {/* Section for common fields that appear in both modes */}
+                <div className="form-section">
+                    <div className="form-group"><label>Full Name <span className="required">*</span></label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></div>
+                    <div className="form-group"><label>Mobile No. <span className="required">*</span></label><input type="tel" value={mobileNo} onChange={handleMobileChange} required maxLength="10" /></div>
+                    <div className="form-group"><label>Admission Date <span className="required">*</span></label><input type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} required /></div>
                 </div>
-                {showAdditionalInfo && (
-                    <div className="additional-info-section">
-                        <div className="form-group">
-                            <label>Custom Monthly Fee (Optional)</label> 
-                            <input type="number" value={customMonthlyFee} onChange={(e) => setCustomMonthlyFee(e.target.value)} min="0" placeholder="e.g., 1200" />
-                        </div>
-                        <div className="form-group">
-                            <label>Plan Duration (Optional)</label>
-                            <select value={planDuration} onChange={(e) => setPlanDuration(e.target.value)}>
-                                <option value="1">1 Month</option><option value="3">3 Months</option><option value="6">6 Months</option><option value="12">1 Year</option>
-                            </select>
-                        </div>
-                        <div className="form-group file-group"><label>Member Photo (Optional)</label><label htmlFor="member_photo" className="file-label"><UploadIcon /><span>{photoName || 'Choose Photo...'}</span></label><input type="file" id="member_photo" onChange={(e) => handleFileChange(e, setMemberPhoto, setPhotoName)} className="file-input-hidden" /></div>
-                        <div className="form-group file-group"><label>ID Proof (Optional)</label><label htmlFor="id_proof" className="file-label"><UploadIcon /><span>{idProofName || 'Choose ID Proof...'}</span></label><input type="file" id="id_proof" onChange={(e) => handleFileChange(e, setIdProof, setIdProofName)} className="file-input-hidden" /></div>
+
+                <div className="form-divider"></div>
+
+                {/* Conditional fields based on formType */}
+                {formType === 'simple' && (
+                    <div className="form-section">
+                        {/* Render the admission fee input for simple mode */}
+                        {admissionFeeInput}
                     </div>
                 )}
+                {formType === 'advanced' && (
+                    <div className="form-section">
+                        {/* Render the admission fee input for advanced mode */}
+                        {admissionFeeInput}
+                        <div className="form-group"><label>Custom Monthly Fee</label><input type="number" value={customMonthlyFee} onChange={(e) => setCustomMonthlyFee(e.target.value)} min="0" placeholder="Recurring fee amount" /></div>
+                        <div className="form-group"><label>Plan Duration</label><select value={planDuration} onChange={(e) => setPlanDuration(e.target.value)}><option value="1">1 Month</option><option value="3">3 Months</option><option value="6">6 Months</option><option value="12">1 Year</option></select></div>
+                    </div>
+                )}
+
+                {/* More common fields */}
+                <div className="form-section">
+                     <div className="form-group"><label>Address</label><textarea value={address} onChange={(e) => setAddress(e.target.value)} rows="3"></textarea></div>
+                    <div className="form-group"><label>Description / Notes</label><input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} /></div>
+                    <div className="form-group"><label>Member Photo</label><label htmlFor="member_photo" className="file-label"><UploadIcon /><span>{photoName || 'Click to upload photo'}</span></label><input type="file" id="member_photo" onChange={(e) => handleFileChange(e, setMemberPhoto, setPhotoName)} className="file-input-hidden" accept="image/*" /></div>
+                    <div className="form-group"><label>ID Proof</label><label htmlFor="id_proof" className="file-label"><UploadIcon /><span>{idProofName || 'Click to upload ID'}</span></label><input type="file" id="id_proof" onChange={(e) => handleFileChange(e, setIdProof, setIdProofName)} className="file-input-hidden" /></div>
+                </div>
+                
                 {submissionError && <p className="error-message">{submissionError}</p>}
+
                 <div className="form-actions">
-                    {/* The cancel button now navigates back to the homepage */}
                     <button type="button" className="button-cancel" onClick={() => navigate('/')} disabled={uploading}>Cancel</button>
                     <button type="submit" className="button-submit" disabled={uploading}>{uploading ? 'Adding...' : 'Add Member'}</button>
                 </div>

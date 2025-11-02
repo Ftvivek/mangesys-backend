@@ -1,109 +1,128 @@
-/* src/components/CalendarMobile.css --- NEW FILE --- */
+/* src/components/CalendarMobile.css --- NEW AESTHETIC REDESIGN --- */
 
-/* The main white card that fills the available space */
+/* The calendar is now a "card" that floats on the page, filling all available space */
 .calendar-page-container {
-    background-color: #FFFFFF;
-    border-radius: 0.75rem; /* 12px */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    padding: 1rem;
-    
-    /* This makes it fill the parent container from MobileLayout.css */
     display: flex;
     flex-direction: column;
-    flex-grow: 1; 
+    flex-grow: 1; /* This is the key to filling the vertical space */
+    background-color: var(--color-background-surface); /* White card background */
+    border-radius: var(--border-radius-large); /* Softer, rounded corners */
+    box-shadow: var(--shadow-soft);
+    padding: 20px 16px;
+    border: 1px solid var(--color-border-primary);
 }
 
-/* Header: < October 2025 > */
+/* A more elegant header section */
 .calendar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1rem;
-    flex-shrink: 0; /* Prevents shrinking */
+    margin-bottom: 1.5rem; /* More space */
+    padding: 0 4px;
 }
-.calendar-header h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
-}
-.nav-button {
-    padding: 0.5rem;
-    border-radius: 9999px;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-.nav-button:hover { background-color: #F3F4F6; }
 
-/* Today Button */
+.calendar-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    /* Using the theme's elegant serif font for the heading */
+    font-family: var(--font-serif-display, 'Georgia', serif);
+}
+
+.nav-button {
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color var(--transition-fast);
+}
+.nav-button:hover {
+    background-color: var(--color-background-surface-alt);
+}
+
+/* The Today button is now a softer, pill-shaped button */
 .today-button {
-    padding: 0.5rem 1rem;
+    padding: 8px 24px;
     font-size: 0.9rem;
     font-weight: 600;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--color-border-secondary);
     border-radius: 9999px;
-    color: #4F46E5;
-    background-color: white;
+    color: var(--color-brand-primary);
+    background-color: transparent;
     cursor: pointer;
-    margin: 0 auto 1rem auto; /* Center the button */
-    flex-shrink: 0; /* Prevents shrinking */
+    margin: 0 auto 1.5rem auto;
+    transition: all var(--transition-fast);
 }
-.today-button:hover { background-color: rgba(79, 70, 229, 0.1); }
+.today-button:hover {
+    background-color: var(--color-brand-light-bg);
+    border-color: var(--color-brand-primary);
+}
 
-/* Weekday Headers: SUN, MON... */
+/* Bolder, clearer weekdays */
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #6B7280;
-    margin-bottom: 0.75rem;
-    flex-shrink: 0; /* Prevents shrinking */
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
 }
 
-/* The main grid of days */
+/* The grid now expands to fill all available space */
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0.5rem; /* Space between days */
-    flex-grow: 1; /* This makes the grid itself expand vertically */
-    grid-auto-rows: 1fr; /* This distributes the space between rows */
+    gap: 4px; /* Tighter gap for a cleaner grid */
+    flex-grow: 1;
+    grid-auto-rows: 1fr; /* This distributes space between rows */
 }
 
-/* Individual day cells */
+/* Each day cell is now a target area */
 .calendar-day {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    position: relative;
     cursor: pointer;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
+    border-radius: var(--border-radius-medium);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background-color var(--transition-fast);
 }
-.calendar-day.empty { opacity: 0.5; cursor: default; }
-.calendar-day:not(.empty):hover { background-color: #f3f4f6; }
+.calendar-day.empty {
+    pointer-events: none;
+    opacity: 0.4;
+}
+.calendar-day:not(.empty):hover {
+    background-color: var(--color-background-surface-alt);
+}
 
-/* The blue circle for "Today" */
-.calendar-day.today span:first-of-type {
-    background-color: #4F46E5;
-    color: #FFFFFF;
-    border-radius: 9999px;
-    width: 2rem;
-    height: 2rem;
+.calendar-day > span:first-of-type {
+    color: var(--color-text-primary);
+}
+
+/* Today's date is now highlighted with a clean outline/ring */
+.calendar-day.today > span:first-of-type {
+    font-weight: 700;
+    color: var(--color-brand-primary);
+    border: 2px solid var(--color-brand-primary); /* The ring effect */
+    background-color: var(--color-brand-light-bg); /* Subtle background */
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
 }
 
-/* The status dot */
+/* Larger, clearer status dots */
 .status-dot {
-    position: absolute;
-    top: 4px;
-    right: 6px;
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
+    margin-top: 6px;
 }
-.status-dot.paid { background-color: #10b981; }
-.status-dot.pending { background-color: #ef4444; }
+.status-dot.paid { background-color: var(--color-status-success); }
+.status-dot.pending { background-color: var(--color-status-error); }

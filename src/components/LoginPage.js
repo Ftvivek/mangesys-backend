@@ -1,121 +1,110 @@
-// src/components/LoginPage.js
+// src/components/LoginPage.js --- FINAL CORRECTED VERSION ---
 
-import React, { useState, useEffect } from 'react'; // <-- IMPORT useEffect
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { postPublic } from '../utils/api';
 import './LoginPage.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const LoginPage = ({ onLoginSuccess }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [shouldRedirect, setShouldRedirect] = useState(false); // <-- NEW: State for redirection
     const navigate = useNavigate();
-
-    // --- NEW: useEffect hook to handle the redirect ---
-    useEffect(() => {
-        // If the redirect flag is set to true...
-        if (shouldRedirect) {
-            // ...wait for a moment so the user can read the error message...
-            const timer = setTimeout(() => {
-                navigate('/contact');
-            }, 2500); // 2.5 second delay
-
-            // ...and clean up the timer if the component unmounts
-            return () => clearTimeout(timer);
-        }
-    }, [shouldRedirect, navigate]); // This effect runs only when `shouldRedirect` changes
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
-
         try {
-            const response = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: username.trim(),
-                    password: password,
-                }),
+            const response = await postPublic('/api/auth/login', {
+                username: username.trim(),
+                password: password,
             });
-
             const data = await response.json();
-
             if (response.ok) {
                 localStorage.setItem('authToken', data.token);
                 localStorage.setItem('userData', JSON.stringify(data.user));
-                if (onLoginSuccess) {
-                    onLoginSuccess(data.user);
-                }
+                if (onLoginSuccess) onLoginSuccess(data.user);
                 navigate('/');
             } else {
-                // --- MODIFIED: Error handling logic ---
-                if (data.errorCode === 'SUBSCRIPTION_EXPIRED') {
-                    // Set the error message to display on the page
-                    setError(data.error || 'Your subscription has expired. Please contact us to renew.');
-                    // Set the flag to trigger the redirect effect
-                    setShouldRedirect(true);
-                } else {
-                    setError(data.error || `Login failed. Server responded with status ${response.status}.`);
-                }
+                setError(data.error || `Login failed. Status: ${response.status}.`);
             }
         } catch (err) {
-            console.error('Login request error:', err);
-            setError('Failed to connect to the server. Please check your network or if the server is running.');
+            setError('Failed to connect to the server. Please try again.');
         } finally {
-            // This will now correctly set loading to false. The redirect is handled separately.
             setLoading(false);
         }
     };
 
     return (
         <div className="login-page-container">
-            <div className="login-form-wrapper">
-                <h2>Login</h2>
-                <form onSubmit={handleSubmit} noValidate>
-                    {error && <p className="error-message">{error}</p>}
-                    <div className="form-group">
-                        <label htmlFor="username">Username</label>
-                        <input
-                            type="text"
-                            id="username"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                            disabled={loading || shouldRedirect} // <-- Disable fields during redirect
-                            placeholder="Enter your username"
-                            autoComplete="username"
-                        />
+            <div className="login-container">
+                
+                <div className="login-hero-panel">
+                    <div className="hero-content">
+                        <div className="hero-asterisk">*</div>
+                        <h1>Hello<br />Mangesys! 👋</h1>
+                        <p>
+                            Streamline your member management, track payments, and
+                            save tons of time through automation.
+                        </p>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            disabled={loading || shouldRedirect} // <-- Disable fields during redirect
-                            placeholder="Enter your password"
-                            autoComplete="current-password"
-                        />
-                    </div>
-                    <button type="submit" className="login-button" disabled={loading || shouldRedirect}>
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                </form>
-                <div className="extra-links">
-                    <p>
-                        Don't have an account? <Link to="/register">Register here</Link>
-                    </p>
+                    <footer>© {new Date().getFullYear()} Mangesys. All rights reserved.</footer>
                 </div>
-                <div className="public-footer">
-                <Link to="/privacy-policy">Privacy Policy</Link> | <Link to="/terms-and-conditions">Terms & Conditions</Link>
-            </div>
+
+                <div className="login-form-panel">
+                    <div className="form-content">
+                        <h3 className="form-logo"></h3>
+                        <h2>Welcome Back!</h2>
+                        
+                        <form onSubmit={handleSubmit} noValidate>
+                            {error && <p className="error-message">{error}</p>}
+                            <div className="form-group">
+                                <input
+                                    type="text"
+                                    id="username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                    disabled={loading}
+                                    placeholder="Username"
+                                    autoComplete="username"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <input
+                                    type="password"
+                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    disabled={loading}
+                                    placeholder="Password"
+                                    autoComplete="current-password"
+                                />
+                            </div>
+                            <button type="submit" className="login-button" disabled={loading}>
+                                {loading ? 'Logging in...' : 'Login Now'}
+                            </button>
+                        </form>
+                        
+                        {/* --- MOVED ALL LINKS TO THE BOTTOM --- */}
+                        <div className="form-footer">
+                            <p className="forgot-password-link">
+                                Forgot password? <a href="#">Click here</a>
+                            </p>
+                            <p className="register-link">
+                                Don't have an account? <Link to="/register">Create a new one.</Link>
+                            </p>
+                             <div className="public-legal-links">
+                                <Link to="/privacy-policy">Privacy Policy</Link> | <Link to="/terms-and-conditions">Terms & Conditions</Link>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </div>
     );

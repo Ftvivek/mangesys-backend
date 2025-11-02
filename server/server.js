@@ -84,6 +84,31 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
+
+
+
+
+async function updateDailyGrandTotals(client, userId, date, cashAmount = 0, upiAmount = 0) {
+    if (cashAmount === 0 && upiAmount === 0) return;
+
+    const grandTotal = cashAmount + upiAmount;
+
+    // This is an "UPSERT" command. It tries to INSERT a new row.
+    // If a row for that user and date already exists (ON CONFLICT), it UPDATES the existing row instead.
+    const query = `
+        INSERT INTO student_management.total_money (user_id, date, total, cash, upi)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (user_id, date) DO UPDATE SET
+            total = student_management.total_money.total + EXCLUDED.total,
+            cash = student_management.total_money.cash + EXCLUDED.cash,
+            upi = student_management.total_money.upi + EXCLUDED.upi;
+    `;
+    await client.query(query, [userId, date, grandTotal, cashAmount, upiAmount]);
+}
+
+
+
+
 // --- Helper Functions & Middleware ---
 async function updateDailyCollection(client, userId, date, cashAmount = 0, onlineAmount = 0) {
     if (cashAmount === 0 && onlineAmount === 0) return;
@@ -433,68 +458,90 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
     const { date: requestedDate } = req.params;
     const loggedInUserId = req.user.id;
     let client;
+
     if (!isValidDate(requestedDate)) {
         return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
     }
+
     try {
         client = await pool.connect();
-        const relevantStudentsQuery = `
-            WITH suspended_students AS (
-                SELECT DISTINCT name FROM student_management.student WHERE user_id = $2 AND suspend = TRUE
+        
+        // This query implements the new logic using the money_manager table.
+        const query = `
+            WITH student_plans AS (
+                SELECT
+                    s.id AS student_id,
+                    s.name,
+                    s.is_special,
+                    mm.regular_fee AS fee_amount,
+                    mm.plan_month AS plan_duration_months,
+                    mm.next_due_date,
+                    mm.is_suspended
+                FROM
+                    student_management.students s
+                JOIN
+                    student_management.money_manager mm ON s.id = mm.student_id
+                WHERE
+                    s.user_id = $1
+                    -- Rule 1: Only select students whose billing DAY matches the clicked DAY
+                    AND EXTRACT(DAY FROM mm.next_due_date) = EXTRACT(DAY FROM $2::date)
             )
-            SELECT 
-                s.id, s.name, s.is_special, s.fee_amount, s.plan_duration_months
-            FROM student_management.students s
-            WHERE 
-                s.user_id = $2 AND DATE(s.admission_date) <= $1
-                AND s.name NOT IN (SELECT name FROM suspended_students)
-                AND (
-                    EXTRACT(DAY FROM s.admission_date) = EXTRACT(DAY FROM $1::date)
-                    OR
-                    (
-                        $1::date = (date_trunc('month', $1::date) + interval '1 month' - interval '1 day')::date
-                        AND
-                        EXTRACT(DAY FROM s.admission_date) >= EXTRACT(DAY FROM $1::date)
-                    )
-                )
-            ORDER BY s.name ASC;
+            SELECT * FROM student_plans;
         `;
-        const relevantStudentsResult = await client.query(relevantStudentsQuery, [requestedDate, loggedInUserId]);
-        const relevantStudents = relevantStudentsResult.rows;
-        const cleanStudentNamesForQuery = relevantStudents
-            .map(student => student.name ? student.name.trim().toLowerCase() : null)
-            .filter(name => name !== null);
-        let statusesOnDateRaw = [];
-        if (cleanStudentNamesForQuery.length > 0) {
-            const statusQuery = `
-                SELECT name, cash, online, suspend
-                FROM student_management.student
-                WHERE DATE(date) = $1 AND LOWER(TRIM(name)) = ANY($2::text[]) AND user_id = $3
-            `;
-            const statusResult = await client.query(statusQuery, [requestedDate, cleanStudentNamesForQuery, loggedInUserId]);
-            statusesOnDateRaw = statusResult.rows;
-        }
-        const pendingStudents = [], paidStudents = [], suspendedStudents = [];
-        relevantStudents.forEach(student => {
-            if (!student.name) return;
-            const studentCleanName = student.name.trim().toLowerCase();
-            const statusInfo = statusesOnDateRaw.find(s => s.name && s.name.trim().toLowerCase() === studentCleanName);
-            const studentDataForList = student; 
-            if (statusInfo) {
-                if (statusInfo.suspend) suspendedStudents.push(studentDataForList);
-                else if (statusInfo.cash || statusInfo.online) paidStudents.push({ ...studentDataForList, paymentType: statusInfo.cash ? 'cash' : 'online' });
-                else pendingStudents.push(studentDataForList);
-            } else { 
-                pendingStudents.push(studentDataForList);
-           }
+
+        const result = await client.query(query, [loggedInUserId, requestedDate]);
+        
+        const pendingStudents = [];
+        const paidStudents = [];
+        const suspendedStudents = [];
+
+        // Truncate the clicked date to the beginning of its month for comparison
+        const requestedDateObj = new Date(requestedDate);
+        const startOfClickedMonth = new Date(requestedDateObj.getFullYear(), requestedDateObj.getMonth(), 1);
+
+        result.rows.forEach(student => {
+            const nextDueDateObj = new Date(student.next_due_date);
+            const startOfNextDueMonth = new Date(nextDueDateObj.getFullYear(), nextDueDateObj.getMonth(), 1);
+
+            if (student.is_suspended) {
+                // --- Logic for SUSPENDED students ---
+                if (startOfNextDueMonth.getTime() === startOfClickedMonth.getTime()) {
+                    // Rule 4: Suspended and due date is in the current month/year -> Suspended List
+                    suspendedStudents.push({ id: student.student_id, name: student.name });
+                } else if (startOfNextDueMonth > startOfClickedMonth) {
+                    // Rule 3B: Suspended but paid ahead -> Paid List
+                    paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
+                }
+                // Rule 5 (Implicit): If suspended and due date is in the past, they are ignored.
+
+            } else {
+                // --- Logic for ACTIVE students ---
+                if (startOfNextDueMonth <= startOfClickedMonth) {
+                    // Rule 2: Active and due date is now or in the past -> Pending List
+                    pendingStudents.push({ 
+                        id: student.student_id, 
+                        name: student.name, 
+                        is_special: student.is_special,
+                        fee_amount: student.fee_amount,
+                        plan_duration_months: student.plan_duration_months
+                    });
+                } else { // startOfNextDueMonth > startOfClickedMonth
+                    // Rule 3A: Active and paid ahead -> Paid List
+                    paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
+                }
+            }
         });
+
         res.json({ pending: pendingStudents, paid: paidStudents, suspended: suspendedStudents });
+
     } catch (err) {
+        console.error(`Error fetching manageable students for date ${requestedDate}:`, err);
         res.status(500).json({ error: `Failed to fetch student status for ${requestedDate}.`, details: err.message });
     } finally {
         if (client) client.release();
     }
 });
+
 
  app.put('/api/student-payment-status/:date/:studentName', authenticateToken, async (req, res) => {
     const { date, studentName: rawStudentName } = req.params;
@@ -544,66 +591,108 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
 
 app.put('/api/student-payment/:studentId/:date', authenticateToken, async (req, res) => {
     const studentId = parseInt(req.params.studentId, 10);
-    const { date } = req.params;
+    const { date: clickedDate } = req.params;
     const { paymentType, updatePlan, feeAmount, planDuration } = req.body;
     const loggedInUserId = req.user.id;
     let client;
-    if (isNaN(studentId) || !isValidDate(date)) {
+
+    if (isNaN(studentId) || !isValidDate(clickedDate)) {
         return res.status(400).json({ error: 'Invalid student ID or date format.' });
     }
     if (!['cash', 'online', 'suspend'].includes(paymentType)) {
         return res.status(400).json({ error: 'Invalid paymentType.' });
     }
+
     try {
         client = await pool.connect();
         await client.query('BEGIN');
-        const studentResult = await client.query(`SELECT name, fee_amount, plan_duration_months FROM student_management.students WHERE id = $1 AND user_id = $2`, [studentId, loggedInUserId]);
+
+        const studentInfoQuery = `
+            SELECT s.name, mm.regular_fee, mm.plan_month, mm.next_due_date
+            FROM student_management.students s
+            JOIN student_management.money_manager mm ON s.id = mm.student_id
+            WHERE s.id = $1 AND s.user_id = $2;
+        `;
+        const studentResult = await client.query(studentInfoQuery, [studentId, loggedInUserId]);
+
         if (studentResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Student not found.' });
+            return res.status(404).json({ error: 'Student with an active plan not found.' });
         }
         const student = studentResult.rows[0];
-        let monthsToPay = 1;
-        let amountPaidPerMonth = 0;
-        if (updatePlan) {
-            monthsToPay = parseInt(planDuration, 10);
-            amountPaidPerMonth = parseFloat(feeAmount);
-            await client.query(`UPDATE student_management.students SET fee_amount = $1, plan_duration_months = $2, is_special = TRUE WHERE id = $3`, [amountPaidPerMonth, monthsToPay, studentId]);
-        } else if (student.fee_amount && student.plan_duration_months) {
-            monthsToPay = student.plan_duration_months;
-            amountPaidPerMonth = student.fee_amount;
-        } else {
-            const ownerResult = await client.query('SELECT set_payment FROM student_management.credentials WHERE id = $1', [loggedInUserId]);
-            monthsToPay = 1;
-            amountPaidPerMonth = parseFloat(ownerResult.rows[0]?.set_payment) || 0;
-        }
+
         if (paymentType === 'suspend') {
-            await client.query(`INSERT INTO student_management.student (name, date, user_id, suspend) VALUES ($1, $2, $3, TRUE) ON CONFLICT (name, date, user_id) DO UPDATE SET suspend = TRUE, cash = FALSE, online = FALSE`, [student.name, date, loggedInUserId]);
-        } else {
-            let lastPaymentDate = new Date(date);
-            for (let i = 0; i < monthsToPay; i++) {
-                const paymentDate = new Date(date);
-                paymentDate.setMonth(paymentDate.getMonth() + i);
-                const paymentDateString = paymentDate.toISOString().slice(0, 10);
-                lastPaymentDate = paymentDate;
-                await client.query(
-                    `INSERT INTO student_management.student (name, date, user_id, cash, online, amount_paid) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (name, date, user_id) DO UPDATE SET cash = EXCLUDED.cash, online = EXCLUDED.online, amount_paid = EXCLUDED.amount_paid, suspend = FALSE`,
-                    [student.name, paymentDateString, loggedInUserId, paymentType === 'cash', paymentType === 'online', amountPaidPerMonth]
-                );
-                const cashAmount = paymentType === 'cash' ? amountPaidPerMonth : 0;
-                const onlineAmount = paymentType === 'online' ? amountPaidPerMonth : 0;
-                await updateDailyCollection(client, loggedInUserId, paymentDateString, cashAmount, onlineAmount);
+            await client.query(`UPDATE student_management.money_manager SET is_suspended = TRUE, plan_updation_date = NOW() WHERE student_id = $1`, [studentId]);
+            await client.query(`INSERT INTO student_management.student (name, date, user_id, suspend) VALUES ($1, $2, $3, TRUE) ON CONFLICT (name, date, user_id) DO UPDATE SET suspend = TRUE, cash = FALSE, online = FALSE`, [student.name, clickedDate, loggedInUserId]);
+            
+            await client.query('COMMIT');
+            return res.json({ message: 'Student suspended successfully.' });
+        }
+
+        let amountPaid = 0;
+        let monthsToAdd = 0;
+
+        // --- THIS IS THE FIX ---
+        // Get today's date based on the server's local timezone, not UTC.
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const day = String(today.getDate()).padStart(2, '0');
+        const liveDate = `${year}-${month}-${day}`;
+        // --- END OF FIX ---
+
+        if (updatePlan) {
+            amountPaid = parseFloat(feeAmount);
+            monthsToAdd = parseInt(planDuration, 10);
+            if (isNaN(amountPaid) || amountPaid < 0 || isNaN(monthsToAdd) || monthsToAdd <= 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'Invalid custom fee or duration.' });
             }
-            const nextDueDate = new Date(lastPaymentDate);
-            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-            const nextDueDateString = nextDueDate.toISOString().slice(0, 10);
             await client.query(
-                `UPDATE student_management.students SET next_due_date = $1 WHERE id = $2`,
-                [nextDueDateString, studentId]
+                `UPDATE student_management.money_manager
+                 SET
+                   next_due_date = next_due_date + ($1 * INTERVAL '1 month'),
+                   regular_fee = $2,
+                   plan_month = $1,
+                   plan_updation_date = NOW(),
+                   is_suspended = FALSE
+                 WHERE student_id = $3`,
+                [monthsToAdd, amountPaid, studentId]
+            );
+        } else {
+            amountPaid = parseFloat(student.regular_fee);
+            monthsToAdd = parseInt(student.plan_month, 10);
+            await client.query(
+                `UPDATE student_management.money_manager
+                 SET
+                   next_due_date = next_due_date + ($1 * INTERVAL '1 month'),
+                   plan_updation_date = NOW(),
+                   is_suspended = FALSE
+                 WHERE student_id = $2`,
+                [monthsToAdd, studentId]
             );
         }
+
+        const cashAmount = paymentType === 'cash' ? amountPaid : 0;
+        const upiAmount = paymentType === 'online' ? amountPaid : 0;
+        if(amountPaid > 0) {
+            await updateDailyGrandTotals(client, loggedInUserId, liveDate, cashAmount, upiAmount);
+        }
+        
+        await client.query(
+            `INSERT INTO student_management.student (name, date, user_id, cash, online, amount_paid, suspend) 
+             VALUES ($1, $2, $3, $4, $5, $6, FALSE) 
+             ON CONFLICT (name, date, user_id) DO UPDATE SET 
+               cash = EXCLUDED.cash, 
+               online = EXCLUDED.online, 
+               amount_paid = EXCLUDED.amount_paid, 
+               suspend = FALSE`,
+            [student.name, clickedDate, loggedInUserId, paymentType === 'cash', paymentType === 'online', amountPaid]
+        );
+
         await client.query('COMMIT');
-        res.json({ message: 'Action completed successfully.' });
+        res.json({ message: 'Payment processed successfully.' });
+
     } catch (err) {
         if (client) await client.query('ROLLBACK');
         console.error('Error processing student payment:', err);
@@ -624,12 +713,11 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
         return res.status(400).json({ error: 'Missing required fields: name, admissionDate, mobile_no.' });
     }
     if (!isValidDate(admissionDate)) {
-        return res.status(400).json({ error: 'Invalid admission date format. Use YYYY-MM-DD.' });
+        return res.status(400).json({ error: 'Invalid admission date format. Use YYY-MM-DD.' });
     }
 
     let client;
     try {
-        // Upload files to S3 and get URLs first
         let photoUrl = null;
         if (studentPhotoFile) {
             photoUrl = await uploadFileToS3(studentPhotoFile.buffer, studentPhotoFile.originalname, studentPhotoFile.mimetype);
@@ -643,62 +731,99 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
         await client.query('BEGIN');
 
         const isSpecialStudent = !!(feeAmount && planDuration);
-        let nextDueDateString = null;
         const monthsInPlan = isSpecialStudent ? parseInt(planDuration, 10) : 1;
+        
+        let regularFeeAmount;
+        if (isSpecialStudent) {
+            regularFeeAmount = parseFloat(feeAmount);
+        } else {
+            const ownerResult = await client.query('SELECT set_payment FROM student_management.credentials WHERE id = $1', [loggedInUserId]);
+            regularFeeAmount = parseFloat(ownerResult.rows[0]?.set_payment) || 0;
+        }
+
         const nextDueDate = new Date(admissionDate);
         nextDueDate.setMonth(nextDueDate.getMonth() + monthsInPlan);
-        nextDueDateString = nextDueDate.toISOString().slice(0, 10);
-
+        const nextDueDateString = nextDueDate.toISOString().slice(0, 10);
+        
         const studentQueryText = `
             INSERT INTO student_management.students
               (name, grade, admission_date, mobile_no, address, student_photo, id_proof, user_id, fee_amount, plan_duration_months, is_special, next_due_date)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            RETURNING *;
+            RETURNING id, name, admission_date;
         `;
         const studentValues = [
             name.trim(), grade?.trim(), admissionDate, mobile_no, address?.trim(),
-            photoUrl, idProofUrl, loggedInUserId, // Use S3 URLs
+            photoUrl, idProofUrl, loggedInUserId,
             isSpecialStudent ? parseFloat(feeAmount) : null,
-            isSpecialStudent ? parseInt(planDuration, 10) : 1,
-            isSpecialStudent, nextDueDateString
+            monthsInPlan, isSpecialStudent, nextDueDateString
         ];
         const studentResult = await client.query(studentQueryText, studentValues);
         const newStudent = studentResult.rows[0];
 
         const oneTimeAdmissionFee = parseFloat(admissionFee) || 0;
+
+        const moneyManagerQuery = `
+            INSERT INTO student_management.money_manager
+              (student_id, user_id, admission_date, next_due_date, plan_month, admission_fee, regular_fee)
+            VALUES ($1, $2, $3, $4, $5, $6, $7);
+        `;
+        const moneyManagerValues = [
+            newStudent.id, loggedInUserId, newStudent.admission_date,
+            nextDueDateString, monthsInPlan, oneTimeAdmissionFee, regularFeeAmount
+        ];
+        await client.query(moneyManagerQuery, moneyManagerValues);
+
+
+        // --- NEW LOGIC: Update the grand totals ---
+        // For new admissions, we will assume all payments (admission fee + first month's fee) are made in CASH.
+        // This can be changed later if needed.
+        let totalCashForDay = 0;
+        if (oneTimeAdmissionFee > 0) {
+            totalCashForDay += oneTimeAdmissionFee;
+        }
+        if (regularFeeAmount > 0) {
+            totalCashForDay += regularFeeAmount;
+        }
+
+        // Call the new helper function to update the total_money table
+        if (totalCashForDay > 0) {
+            await updateDailyGrandTotals(client, loggedInUserId, newStudent.admission_date, totalCashForDay, 0);
+        }
+        // --- END OF NEW LOGIC ---
+
+
+        // This part below handles the detailed transaction log in the 'student' table.
+        // It's still necessary for tracking individual payments.
         if (oneTimeAdmissionFee > 0) {
             await client.query(
                 `INSERT INTO student_management.student (name, date, user_id, cash, amount_paid, amount_for_new) VALUES ($1, $2, $3, TRUE, $4, $4)`,
                 [newStudent.name, newStudent.admission_date, loggedInUserId, oneTimeAdmissionFee]
             );
-            await updateDailyCollection(client, loggedInUserId, newStudent.admission_date, oneTimeAdmissionFee, 0);
         }
-
-        const recurringFee = parseFloat(feeAmount) || 0;
-        const monthsToPayFor = isSpecialStudent ? parseInt(planDuration, 10) : 0;
-        if (isSpecialStudent && recurringFee > 0) {
-            for (let i = 0; i < monthsToPayFor; i++) {
-                const paymentDate = new Date(admissionDate);
-                paymentDate.setMonth(paymentDate.getMonth() + i);
-                const paymentDateString = paymentDate.toISOString().slice(0, 10);
-                await client.query(
-                    `INSERT INTO student_management.student (name, date, user_id, cash, amount_paid) VALUES ($1, $2, $3, TRUE, $4)`,
-                    [newStudent.name, paymentDateString, loggedInUserId, recurringFee]
-                );
-                await updateDailyCollection(client, loggedInUserId, paymentDateString, recurringFee, 0);
-            }
+        if (regularFeeAmount > 0) {
+            const paymentQuery = `
+                INSERT INTO student_management.student (name, date, user_id, cash, amount_paid)
+                VALUES ($1, $2, $3, TRUE, $4)
+                ON CONFLICT (name, date, user_id) DO UPDATE SET
+                    amount_paid = student_management.student.amount_paid + EXCLUDED.amount_paid,
+                    cash = TRUE;
+            `;
+            await client.query(paymentQuery, [newStudent.name, newStudent.admission_date, loggedInUserId, regularFeeAmount]);
         }
+        
         await client.query('COMMIT');
         res.status(201).json(studentResult.rows[0]);
 
     } catch (err) {
         if (client) { await client.query('ROLLBACK'); }
-        console.error('Error adding student with S3 upload:', err);
+        console.error('Error adding student:', err);
         res.status(500).json({ error: 'Failed to add new student.', details: err.message });
     } finally {
         if (client) client.release();
     }
 });
+
+
 
 // GET SINGLE STUDENT - Modified to return S3 URLs
  app.get('/api/students/:id', authenticateToken, async (req, res) => {
@@ -730,69 +855,128 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
  });
 
 // EDIT STUDENT - Modified to upload to S3
-app.put('/api/students/:id', authenticateToken, upload.fields([{ name: 'student_photo', maxCount: 1 }, { name: 'id_proof', maxCount: 1 }]), async (req, res) => {
-    const studentId = parseInt(req.params.id, 10);
-    const { name, grade, mobile_no, address } = req.body;
+app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_photo', maxCount: 1 }, { name: 'id_proof', maxCount: 1 }]), async (req, res) => {
+    const { name, admissionDate, mobile_no, address, grade, admissionFee, feeAmount, planDuration } = req.body;
     const studentPhotoFile = req.files?.['student_photo']?.[0];
     const idProofFile = req.files?.['id_proof']?.[0];
-
-    if (isNaN(studentId)) {
-        return res.status(400).json({ error: 'Invalid student ID.' });
+    const loggedInUserId = req.user.id;
+    
+    if (!name || !admissionDate || !mobile_no) {
+        return res.status(400).json({ error: 'Missing required fields: name, admissionDate, mobile_no.' });
+    }
+    if (!isValidDate(admissionDate)) {
+        return res.status(400).json({ error: 'Invalid admission date format. Use YYY-MM-DD.' });
     }
 
     let client;
     try {
-        client = await pool.connect();
-        
-        // First, verify the student belongs to the logged-in user
-        const ownerCheck = await client.query(
-            'SELECT id FROM student_management.students WHERE id = $1 AND user_id = $2',
-            [studentId, req.user.id]
-        );
-        if (ownerCheck.rows.length === 0) {
-            return res.status(403).json({ error: 'Permission denied. You do not own this student record.' });
-        }
-
-        const fields = [];
-        const values = [];
-        let queryIndex = 1;
-
-        if (name) { fields.push(`name = $${queryIndex++}`); values.push(name.trim()); }
-        if (grade) { fields.push(`grade = $${queryIndex++}`); values.push(grade.trim()); }
-        if (mobile_no) { fields.push(`mobile_no = $${queryIndex++}`); values.push(mobile_no); }
-        if (address) { fields.push(`address = $${queryIndex++}`); values.push(address.trim()); }
-
+        let photoUrl = null;
         if (studentPhotoFile) {
-            const photoUrl = await uploadFileToS3(studentPhotoFile.buffer, studentPhotoFile.originalname, studentPhotoFile.mimetype);
-            fields.push(`student_photo = $${queryIndex++}`);
-            values.push(photoUrl);
+            photoUrl = await uploadFileToS3(studentPhotoFile.buffer, studentPhotoFile.originalname, studentPhotoFile.mimetype);
         }
+        let idProofUrl = null;
         if (idProofFile) {
-            const idProofUrl = await uploadFileToS3(idProofFile.buffer, idProofFile.originalname, idProofFile.mimetype);
-            fields.push(`id_proof = $${queryIndex++}`);
-            values.push(idProofUrl);
+            idProofUrl = await uploadFileToS3(idProofFile.buffer, idProofFile.originalname, idProofFile.mimetype);
         }
 
-        if (fields.length === 0) return res.status(400).json({ error: 'No fields to update.' });
+        client = await pool.connect();
+        await client.query('BEGIN');
 
-        values.push(studentId, req.user.id);
-        const updateQuery = `UPDATE student_management.students SET ${fields.join(', ')} WHERE id = $${queryIndex} AND user_id = $${queryIndex + 1} RETURNING *;`;
+        const isSpecialStudent = !!(feeAmount && planDuration);
+        const monthsInPlan = isSpecialStudent ? parseInt(planDuration, 10) : 1;
         
-        const result = await client.query(updateQuery, values);
+        let regularFeeAmountPerMonth;
+        if (isSpecialStudent) {
+            regularFeeAmountPerMonth = parseFloat(feeAmount) || 0;
+        } else {
+            const ownerResult = await client.query('SELECT set_payment FROM student_management.credentials WHERE id = $1', [loggedInUserId]);
+            regularFeeAmountPerMonth = parseFloat(ownerResult.rows[0]?.set_payment) || 0;
+        }
+
+        const nextDueDate = new Date(admissionDate);
+        nextDueDate.setMonth(nextDueDate.getMonth() + monthsInPlan);
+        const nextDueDateString = nextDueDate.toISOString().slice(0, 10);
         
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Student not found or update failed.' });
+        const studentQueryText = `
+            INSERT INTO student_management.students
+              (name, grade, admission_date, mobile_no, address, student_photo, id_proof, user_id, fee_amount, plan_duration_months, is_special, next_due_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            RETURNING id, name, admission_date;
+        `;
+        const studentValues = [
+            name.trim(), grade?.trim(), admissionDate, mobile_no, address?.trim(),
+            photoUrl, idProofUrl, loggedInUserId,
+            isSpecialStudent ? regularFeeAmountPerMonth : null,
+            monthsInPlan, isSpecialStudent, nextDueDateString
+        ];
+        const studentResult = await client.query(studentQueryText, studentValues);
+        const newStudent = studentResult.rows[0];
+
+        const oneTimeAdmissionFee = parseFloat(admissionFee) || 0;
+
+        const moneyManagerQuery = `
+            INSERT INTO student_management.money_manager
+              (student_id, user_id, admission_date, next_due_date, plan_month, admission_fee, regular_fee)
+            VALUES ($1, $2, $3, $4, $5, $6, $7);
+        `;
+        const moneyManagerValues = [
+            newStudent.id, loggedInUserId, newStudent.admission_date,
+            nextDueDateString, monthsInPlan, oneTimeAdmissionFee, regularFeeAmountPerMonth
+        ];
+        await client.query(moneyManagerValues);
+
+        // --- CORRECTED AGGREGATION AND DATE LOGIC ---
+
+        // 1. Aggregate ALL money collected in this transaction.
+        const totalRegularFeeCollected = regularFeeAmountPerMonth * monthsInPlan;
+        const totalCashForDay = oneTimeAdmissionFee + totalRegularFeeCollected;
+
+        // 2. Get the current LIVE date, timezone-safe.
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const liveDate = `${year}-${month}-${day}`;
+        
+        // 3. Call the helper function ONCE with the aggregated total and the LIVE date.
+        if (totalCashForDay > 0) {
+            await updateDailyGrandTotals(client, loggedInUserId, liveDate, totalCashForDay, 0);
         }
         
-        res.json({ message: 'Profile updated.', student: result.rows[0] });
+        // --- END OF CORRECTIONS ---
+
+
+        // The detailed transaction log in the 'student' table still uses the admissionDate.
+        if (oneTimeAdmissionFee > 0) {
+            await client.query(
+                `INSERT INTO student_management.student (name, date, user_id, cash, amount_paid, amount_for_new) VALUES ($1, $2, $3, TRUE, $4, $4)`,
+                [newStudent.name, newStudent.admission_date, loggedInUserId, oneTimeAdmissionFee]
+            );
+        }
+        if (regularFeeAmountPerMonth > 0) {
+            const paymentQuery = `
+                INSERT INTO student_management.student (name, date, user_id, cash, amount_paid)
+                VALUES ($1, $2, $3, TRUE, $4)
+                ON CONFLICT (name, date, user_id) DO UPDATE SET
+                    amount_paid = student_management.student.amount_paid + EXCLUDED.amount_paid,
+                    cash = TRUE;
+            `;
+            await client.query(paymentQuery, [newStudent.name, newStudent.admission_date, loggedInUserId, regularFeeAmountPerMonth]);
+        }
+        
+        await client.query('COMMIT');
+        res.status(201).json(studentResult.rows[0]);
 
     } catch (err) {
-        console.error('Error updating student with S3:', err);
-        res.status(500).json({ error: 'Server error during update.' });
+        if (client) { await client.query('ROLLBACK'); }
+        console.error('Error adding student:', err);
+        res.status(500).json({ error: 'Failed to add new student.', details: err.message });
     } finally {
         if (client) client.release();
     }
 });
+
+
 
  app.get('/api/admin/users', authenticateToken, isAdmin, async (req, res) => {
     let client;
@@ -1201,6 +1385,46 @@ app.put('/api/students/:studentId/make-active', authenticateToken, async (req, r
     }
 });
 
+
+app.get('/api/transactions/summary/:date', authenticateToken, async (req, res) => {
+    const { date } = req.params;
+    const loggedInUserId = req.user.id;
+
+    if (!isValidDate(date)) {
+        return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        const query = `
+            SELECT cash, upi
+            FROM student_management.total_money
+            WHERE user_id = $1 AND date = $2;
+        `;
+        const result = await client.query(query, [loggedInUserId, date]);
+
+        if (result.rows.length > 0) {
+            const data = result.rows[0];
+            res.json({
+                totalCash: parseFloat(data.cash) || 0,
+                totalUpi: parseFloat(data.upi) || 0,
+            });
+        } else {
+            // If no record exists for that day, return zeros
+            res.json({
+                totalCash: 0,
+                totalUpi: 0,
+            });
+        }
+    } catch (err) {
+        console.error('Error fetching transaction summary:', err);
+        res.status(500).json({ error: 'Failed to fetch transaction summary', details: err.message });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 app.get('/api/logs', authenticateToken, async (req, res) => {
     const { startDate, endDate } = req.query;
     const loggedInUserId = req.user.id;
@@ -1236,6 +1460,7 @@ app.get('/api/logs', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
+
 
 // --- CRON JOB ---
 const cron = require('node-cron');

@@ -1,20 +1,21 @@
-/* src/components/AllStudentList.css --- NEW TAB-BASED STYLING --- */
+/* src/components/AllStudentList.css --- REFACTORED TO USE THEME --- */
 
 .all-students-list-container {
-  background-color: #ffffff;
+  background-color: var(--color-background-surface);
   padding: 30px 35px;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--shadow-soft);
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-primary);
 }
 
 .all-students-list-container h2 {
-  color: #111827;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-serif-display);
+  font-size: 2rem;
+  font-weight: 700;
   margin-top: 0;
   margin-bottom: 25px;
   text-align: center;
@@ -24,17 +25,19 @@
 .all-students-list-container .search-bar-container {
     padding-bottom: 25px;
 }
+/* This makes the search bar blend into the page container */
 .all-students-list-container .search-bar {
     max-width: 100%;
     box-shadow: none;
-    background-color: #f9fafb;
+    background-color: var(--color-background-surface-alt);
+    border-color: var(--color-border-secondary);
 }
 
-/* --- NEW: Tab Navigation Styles --- */
+/* --- Tab Navigation Styles --- */
 .tabs-container {
     display: flex;
     gap: 10px;
-    border-bottom: 2px solid #f3f4f6;
+    border-bottom: 2px solid var(--color-border-secondary);
     margin-bottom: 25px;
 }
 
@@ -42,25 +45,25 @@
     padding: 12px 20px;
     font-size: 1rem;
     font-weight: 600;
-    color: #6b7280; /* Gray for inactive tabs */
+    color: var(--color-text-secondary); /* Gray for inactive tabs */
     background-color: transparent;
     border: none;
     border-bottom: 3px solid transparent;
     cursor: pointer;
-    transition: color 0.2s ease, border-color 0.2s ease;
-    transform: translateY(2px); /* Align with the bottom border */
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+    transform: translateY(2px);
 }
 
 .tab-button:hover {
-    color: #374151;
+    color: var(--color-text-primary);
 }
 
 .tab-button.active {
-    color: #4f46e5; /* Indigo for active tab */
-    border-bottom-color: #4f46e5;
+    color: var(--color-brand-accent); /* Gold for active tab */
+    border-bottom-color: var(--color-brand-accent);
 }
 
-/* --- List Styling (remains similar) --- */
+/* --- List Styling --- */
 .student-list {
   list-style: none;
   padding: 0;
@@ -68,58 +71,57 @@
 
 .student-item {
   padding: 16px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border-secondary);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  border-radius: var(--border-radius-medium);
+  transition: background-color var(--transition-fast);
   cursor: pointer;
 }
 .student-item:last-child {
   border-bottom: none;
 }
 .student-item:hover {
-    background-color: #f9fafb;
+    background-color: var(--color-background-surface-alt);
 }
 
 .student-name {
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text-primary);
 }
 
 .student-info {
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
 .no-members-message {
-    background-color: #f9fafb;
+    background-color: var(--color-background-surface-alt);
     padding: 20px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-medium);
     text-align: center;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-style: italic;
     margin-top: 20px;
 }
 
-/* ADD THIS TO THE END of AllStudentList.css */
-
+/* --- "Make Active" Button Styling --- */
 .make-active-btn {
     padding: 6px 14px;
-    border-radius: 6px;
-    border: 1px solid #15803d; /* Dark green border */
-    background-color: #dcfce7; /* Light green background */
-    color: #166534; /* Dark green text */
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--color-status-success);
+    background-color: var(--color-status-success-bg);
+    color: var(--color-status-success);
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    margin-left: auto; /* Push the button to the right */
-    transition: all 0.2s ease;
+    margin-left: auto;
+    transition: all var(--transition-fast);
 }
 
 .make-active-btn:hover {
-    background-color: #16a34a; /* Green */
-    color: white;
-    border-color: #15803d;
+    background-color: var(--color-status-success);
+    color: var(--color-text-on-accent);
+    border-color: var(--color-status-success);
 }

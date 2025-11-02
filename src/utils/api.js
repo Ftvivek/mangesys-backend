@@ -1,11 +1,43 @@
 // src/utils/api.js
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// Using REACT_APP_API_URL is the best practice for production.
+// The hardcoded IP is just for our current local test.
+const API_BASE_URL ='http://localhost:5000';
+//const API_BASE_URL ='https://d7ev4pcik9hdv.cloudfront.net';
+// ========================================================================
+// --- NEW: FUNCTION FOR PUBLIC (NON-AUTHENTICATED) REQUESTS ---
+// This will be used for Login and Registration pages.
+// It does NOT have the special 401 redirect logic.
+// ========================================================================
+export const postPublic = async (endpoint, body) => {
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    };
 
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+        // We simply return whatever response we get from the server.
+        return response;
+    } catch (error) {
+        // This will catch network errors (e.g., server is down).
+        console.error('Public API call failed:', error);
+        throw error;
+    }
+};
+
+
+// ========================================================================
+// --- EXISTING: FUNCTION FOR AUTHENTICATED REQUESTS ---
+// This is for all API calls AFTER a user has logged in.
+// It correctly handles expired tokens by redirecting to the login page.
+// ========================================================================
 export const fetchWithAuth = async (endpoint, options = {}) => {
     const token = localStorage.getItem('authToken');
     const headers = {
-        // Spread existing headers from options
         ...options.headers,
     };
 
@@ -13,44 +45,44 @@ export const fetchWithAuth = async (endpoint, options = {}) => {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Automatically set Content-Type for JSON if body is an object and not FormData
-    // FormData sets its own Content-Type with boundary
-    if (options.body && !(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(options.body); // Ensure body is stringified
+    // This block handles both JSON objects and FormData for file uploads.
+    if (options.body) {
+        if (options.body instanceof FormData) {
+            // FormData sets its own Content-Type, so we don't add it.
+        } else {
+            // For plain objects, we set the header and stringify the body.
+            headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(options.body);
+        }
     }
-
-
+    
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, { // Prepend API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
             headers,
         });
 
-        // If token is invalid or expired, backend should return 401 or 403
+        // This logic is INTENDED for logged-in users. 
+        // If a token is bad, log them out. This is correct for this function.
         if (response.status === 401 || response.status === 403) {
             console.error('Auth error:', response.status, 'Redirecting to login.');
             localStorage.removeItem('authToken');
             localStorage.removeItem('userData');
-            // Simple redirect. For more complex apps, you might use a global state/context for this.
             window.location.href = '/login';
-            // Throw an error to stop further processing in the calling function
             throw new Error(`Authentication failed: ${response.status}`);
         }
 
-        // IMPORTANT: The component calling this will need to handle .json() itself
-        // e.g., const res = await getWithAuth('/my-data'); const data = await res.json();
-        return response; // Return the full response object
+        return response;
 
     } catch (error) {
-        // Handle network errors or the auth error thrown above
+        // This will catch the auth error thrown above or network errors.
         console.error('API call failed:', error);
-        // Re-throw the error so the calling component can handle it
         throw error;
     }
 };
 
-// Helper functions that call fetchWithAuth
+// --- HELPER FUNCTIONS that use fetchWithAuth (for authenticated routes) ---
+
 export const getWithAuth = (endpoint, options = {}) => {
     return fetchWithAuth(endpoint, { ...options, method: 'GET', cache: 'no-store' });
 };

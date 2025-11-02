@@ -1,64 +1,60 @@
-/* src/index.css -- The Single Source of Truth for Your App's Theme */
+/* src/index.css -- THE NEW "MODERN & CLEAN" THEME */
 
 /* --- 1. FONTS --- */
-/* We import the fonts here so they are available globally. */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Lato:wght@400;700&display=swap');
+/* A clean, modern sans-serif font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* --- 2. A SIMPLE, MODERN CSS RESET --- */
-/* This ensures your app looks consistent across all browsers. */
+/* --- 2. MODERN CSS RESET --- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* --- 3. THEME VARIABLES (The "Scholar's Desk" Palette) --- */
-/* This is now the ONLY place these variables will be defined. */
+/* --- 3. THEME VARIABLES (Modern & Clean Palette) --- */
 :root {
   /* Typography */
-  --font-serif-display: 'Cormorant Garamond', serif;
-  --font-sans-ui: 'Lato', sans-serif;
-
+  --font-sans-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  
   /* Core Colors */
-  --color-background-page: #fdfaf6;      /* Parchment background */
+  --color-background-page: #f8f9fa;      /* Light Gray background */
   --color-background-surface: #ffffff;    /* White for cards, modals */
-  --color-background-surface-alt: #f8f9fa; /* Off-white for subtle contrast */
+  --color-background-surface-alt: #f9fafb; /* Lighter Gray for subtle contrast */
   
   /* Text Colors */
-  --color-text-primary: #1d1d1f;        /* Near-black for main text */
-  --color-text-secondary: #6e6e73;      /* Gray for secondary text/labels */
-  --color-text-on-primary: #f0e8dd;     /* Off-white text for dark backgrounds */
-  --color-text-on-accent: #ffffff;      /* Pure white for colored buttons */
+  --color-text-primary: #111827;        /* Dark Gray for main text */
+  --color-text-secondary: #6b7280;      /* Medium Gray for secondary text/labels */
+  --color-text-on-primary: #ffffff;     /* White text for dark/colored backgrounds */
 
   /* Primary Brand/Accent Colors */
-  --color-brand-primary: #1f2a38;        /* Navy-Charcoal for Navbar, etc. */
-  --color-brand-accent: #c59d5f;         /* The rich, burnished gold */
-  --color-brand-accent-hover: #b38b50;   /* A darker gold for hover states */
+  --color-brand-primary: #4f46e5;        /* Vibrant Indigo */
+  --color-brand-primary-hover: #4338ca;   /* Darker Indigo for hover */
+  --color-brand-light-bg: #eef2ff;       /* Light Indigo background for highlights */
 
   /* Status & Action Colors */
-  --color-status-success: #28a745;       /* A clear, accessible green */
-  --color-status-success-bg: #d4edda;
-  --color-status-error: #dc3545;         /* A standard, clear red */
-  --color-status-error-bg: #f8d7da;
-  --color-status-warning: #ffc107;       /* A vibrant yellow/orange */
+  --color-status-success: #16a34a;       /* A modern, vibrant green */
+  --color-status-success-bg: #dcfce7;
+  --color-status-error: #ef4444;         /* A clear red */
+  --color-status-error-bg: #fee2e2;
+  --color-status-warning: #f59e0b;       /* A rich amber/yellow */
+  --color-status-warning-bg: #fef3c7;
 
   /* Borders & Shadows */
-  --color-border-primary: #e0d9cf;      /* The main, classic border color */
-  --color-border-secondary: #e5e5e5;     /* A softer border for inputs, etc. */
-  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.15);
-  --shadow-focus-ring: 0 0 0 3px rgba(197, 157, 95, 0.4); /* Gold focus ring */
+  --color-border-primary: #e5e7eb;      /* Light Gray border */
+  --color-border-secondary: #d1d5db;     /* Medium Gray border for inputs */
+  --shadow-soft: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-medium: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.2); /* Indigo focus ring */
   
   /* Sizing & Transitions */
-  --border-radius-small: 4px;
+  --border-radius-small: 6px;
   --border-radius-medium: 8px;
-  --border-radius-large: 16px;
+  --border-radius-large: 12px;
   --transition-fast: 0.2s ease-out;
-  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.3s ease-in-out;
 }
 
 /* --- 4. GLOBAL FOUNDATIONAL STYLES --- */
-/* These styles apply to the whole application. */
 body {
   font-family: var(--font-sans-ui);
   background-color: var(--color-background-page);
@@ -67,7 +63,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Global button reset for consistency */
 button {
   font-family: inherit;
   cursor: pointer;
@@ -75,19 +70,38 @@ button {
   background: none;
 }
 
-/* Global link style */
 a {
-  color: var(--color-brand-accent);
+  color: var(--color-brand-primary);
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
-  color: var(--color-brand-accent-hover);
+  color: var(--color-brand-primary-hover);
 }
 
-/* Global focus state for better accessibility */
 *:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus-ring);
   border-radius: var(--border-radius-small);
+}
+
+
+/* src/index.css */
+
+/* --- ADD THIS ENTIRE BLOCK --- */
+/* This is the key to making full-page layouts work reliably. */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+/* --- END OF NEW BLOCK --- */
+
+
+/* --- 4. GLOBAL FOUNDATIONAL STYLES --- */
+body {
+  font-family: var(--font-sans-ui);
+  background-color: var(--color-background-page);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

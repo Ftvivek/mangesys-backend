@@ -106,7 +106,7 @@ const AllStudentList = () => {
                                     <li key={student.id} className="student-item" onClick={() => navigate(`/student-profile/${student.id}`)}>
                                         <span className="student-name">{student.name}</span>
                                         <span className="student-info">
-                                            Admission: {student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}
+                                            Adm: {student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}
                                         </span>
                                     </li>
                                 ))}

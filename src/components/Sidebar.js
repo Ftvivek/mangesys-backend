@@ -4,7 +4,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
     FaTachometerAlt, FaUserPlus, FaUsers, FaEnvelope, 
-    FaBell, FaCog, FaTags, FaSignOutAlt 
+    FaBell, FaCog, FaTags, FaSignOutAlt, FaChartLine, FaDolly // New Icon
 } from 'react-icons/fa';
 import './Sidebar.css';
 
@@ -25,14 +25,22 @@ const Sidebar = ({ onLogout, onSetPaymentClick }) => {
                 <NavLink to="/all-members" className="nav-link">
                     <FaUsers className="nav-icon" /><span>View All Members</span>
                 </NavLink>
-                <NavLink to="/contact" className="nav-link">
-                    <FaEnvelope className="nav-icon" /><span>Contact Us</span>
+                <NavLink to="/financial-report" className="nav-link">
+                    <FaChartLine className="nav-icon" /><span>Financial Report</span>
                 </NavLink>
+                {/* --- NEW TRANSACTION LINK --- */}
+                <NavLink to="/transactions" className="nav-link">
+                    <FaDolly className="nav-icon" /><span>Transaction</span>
+                </NavLink>
+                
                 <NavLink to="/reminders" className="nav-link">
                     <FaBell className="nav-icon" /><span>Reminder Status</span>
                 </NavLink>
                 <NavLink to="/settings" className="nav-link">
                     <FaCog className="nav-icon" /><span>Settings</span>
+                </NavLink>
+                <NavLink to="/contact" className="nav-link">
+                    <FaEnvelope className="nav-icon" /><span>Contact Us</span>
                 </NavLink>
                 
                 <button onClick={onSetPaymentClick} className="nav-link as-button">

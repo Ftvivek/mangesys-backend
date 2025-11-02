@@ -1,23 +1,21 @@
-/* src/components/BottomNavBar.css --- POLISHED --- */
+/* src/components/BottomNavBar.css --- FINAL POLISHED VERSION --- */
 
 .bottom-nav-bar {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #ffffff;
-    border-top: 1px solid #e5e7eb;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    background-color: var(--color-background-surface);
+    border-top: 1px solid var(--color-border-primary);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
     z-index: 1000;
-    box-sizing: border-box;
 }
 
 .nav-items-container {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    height: 65px; /* Good height for touch targets */
-    padding: 5px 0; /* Add some vertical padding */
+    height: 65px;
 }
 
 .nav-item {
@@ -27,32 +25,42 @@
     justify-content: center;
     flex-grow: 1;
     text-decoration: none;
-    color: #6b7280; /* Muted gray for inactive icons */
+    color: var(--color-text-secondary);
     transition: color 0.2s ease-in-out, transform 0.1s ease;
-    padding: 5px 0;
+    
 }
 
-/* A subtle effect when tapping a nav item */
+/* Add a subtle "press" effect when an item is tapped */
 .nav-item:active {
     transform: scale(0.95);
 }
 
+/* ============================================== */
+/* === THE KEY CHANGES FOR BETTER BALANCE === */
+/* ============================================== */
+
 .nav-icon {
-    font-size: 24px; /* Slightly larger icon */
-    margin-bottom: 3px;
+    font-size: 24px;      /* Slightly smaller icon for better proportion */
+    margin-bottom: 2px;   /* REDUCED: This brings the label closer to the icon */
+    margin-right: 2px;
 }
 
 .nav-label {
-    font-size: 12px; /* Slightly larger, more readable text */
+    font-size: 13px;      /* INCREASED: A slightly larger label is more readable and balanced */
     font-weight: 500;
 }
 
-/* Style for the active NavLink */
+/* The active NavLink gets the primary brand color for a nice accent */
 .nav-item.active {
-    color: #4f46e5; /* A nice indigo for the active icon */
+    color: var(--color-brand-primary); /* CHANGED: Using brand color for a better look */
 }
 
-/* Resetting button styles to make it look like a nav item */
+/* ============================================== */
+/* === END OF KEY CHANGES === */
+/* ============================================== */
+
+
+/* Reset button styles to match the other nav items */
 .nav-item-button {
     background: none;
     border: none;

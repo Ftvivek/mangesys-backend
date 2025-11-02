@@ -24,10 +24,10 @@ const PrivacyPolicyPage = () => {
 
             {/* !!! IMPORTANT: REPLACE THE REST OF THIS WITH YOUR ACTUAL PRIVACY POLICY !!! */}
             <h2>3. How We Use Your Information</h2>
-            <p>Placeholder text: Describe how you use the data...</p>
+            <p>We may use your data for analytical and research purpose.</p>
 
             <h2>4. Will Your Information Be Shared With Anyone?</h2>
-            <p>Placeholder text: Explain your data sharing policies...</p>
+            <p>your , all data won't be shared with anyone at any cost.</p>
 
             <h2>5. Contact Us</h2>
             <p>
