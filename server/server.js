@@ -84,9 +84,7 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
-
-
-
+// --- Helper Functions & Middleware ---
 
 async function updateDailyGrandTotals(client, userId, date, cashAmount = 0, upiAmount = 0) {
     if (cashAmount === 0 && upiAmount === 0) return;
@@ -104,20 +102,6 @@ async function updateDailyGrandTotals(client, userId, date, cashAmount = 0, upiA
             upi = student_management.total_money.upi + EXCLUDED.upi;
     `;
     await client.query(query, [userId, date, grandTotal, cashAmount, upiAmount]);
-}
-
-
-
-
-// --- Helper Functions & Middleware ---
-async function updateDailyCollection(client, userId, date, cashAmount = 0, onlineAmount = 0) {
-    if (cashAmount === 0 && onlineAmount === 0) return;
-    const query = `
-        INSERT INTO student_management.daily_collections (user_id, date, total_cash, total_online)
-        VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, date) DO UPDATE SET
-        total_cash = student_management.daily_collections.total_cash + EXCLUDED.total_cash,
-        total_online = student_management.daily_collections.total_online + EXCLUDED.total_online;`;
-    await client.query(query, [userId, date, cashAmount, onlineAmount]);
 }
 
 const authenticateToken = (req, res, next) => {
@@ -301,65 +285,6 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.get('/api/collection/today', authenticateToken, async (req, res) => {
-     let client;
-     try {
-         const loggedInUserId = req.user.id;
-         const today = new Date().toISOString().slice(0, 10);
-         client = await pool.connect();
-         const onlineQuery = `
-             SELECT COUNT(*) AS online_count
-             FROM student_management.student
-             WHERE DATE(date) = $1 AND online = TRUE AND user_id = $2;
-         `;
-         const cashQuery = `
-             SELECT COUNT(*) AS cash_count
-             FROM student_management.student
-             WHERE DATE(date) = $1 AND cash = TRUE AND user_id = $2;
-         `;
-         const [onlineResult, cashResult] = await Promise.all([
-             client.query(onlineQuery, [today, loggedInUserId]),
-             client.query(cashQuery, [today, loggedInUserId])
-         ]);
-         const onlineCount = parseInt(onlineResult.rows[0]?.online_count || "0", 10);
-         const cashCount = parseInt(cashResult.rows[0]?.cash_count || "0", 10);
-         res.json({ onlineCount, cashCount });
-     } catch (err) {
-         res.status(500).json({ error: 'Failed to fetch today\'s collection data', details: err.message });
-     } finally {
-         if (client) client.release();
-     }
- });
-
-app.get('/api/collection/:date', authenticateToken, async (req, res) => {
-    const { date } = req.params;
-    const loggedInUserId = req.user.id;
-    let client;
-    if (!isValidDate(date)) { return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' }); }
-    try {
-        client = await pool.connect();
-        const collectionQuery = `
-            SELECT total_cash, total_online
-            FROM student_management.daily_collections
-            WHERE user_id = $1 AND date = $2;
-        `;
-        const result = await client.query(collectionQuery, [loggedInUserId, date]);
-        const data = result.rows[0] || { total_cash: 0, total_online: 0 };
-        res.json({
-            totalCash: parseFloat(data.total_cash),
-            totalOnline: parseFloat(data.total_online),
-            cashCount: 0, 
-            onlineCount: 0 
-        });
-    } catch (err) {
-        console.error('Error fetching collection data:', err);
-        res.status(500).json({ error: 'Failed to fetch collection data', details: err.message });
-    } finally {
-        if (client) client.release();
-    }
-});
-
-
 // GET STUDENTS - Modified to return S3 URLs
 app.get('/api/students', authenticateToken, async (req, res) => {
     let client;
@@ -466,13 +391,14 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
     try {
         client = await pool.connect();
         
-        // This query implements the new logic using the money_manager table.
+        // This query now also selects admission_date to apply the new filter
         const query = `
             WITH student_plans AS (
                 SELECT
                     s.id AS student_id,
                     s.name,
                     s.is_special,
+                    s.admission_date, -- <-- NEWLY ADDED
                     mm.regular_fee AS fee_amount,
                     mm.plan_month AS plan_duration_months,
                     mm.next_due_date,
@@ -483,7 +409,6 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
                     student_management.money_manager mm ON s.id = mm.student_id
                 WHERE
                     s.user_id = $1
-                    -- Rule 1: Only select students whose billing DAY matches the clicked DAY
                     AND EXTRACT(DAY FROM mm.next_due_date) = EXTRACT(DAY FROM $2::date)
             )
             SELECT * FROM student_plans;
@@ -495,7 +420,6 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
         const paidStudents = [];
         const suspendedStudents = [];
 
-        // Truncate the clicked date to the beginning of its month for comparison
         const requestedDateObj = new Date(requestedDate);
         const startOfClickedMonth = new Date(requestedDateObj.getFullYear(), requestedDateObj.getMonth(), 1);
 
@@ -504,20 +428,14 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
             const startOfNextDueMonth = new Date(nextDueDateObj.getFullYear(), nextDueDateObj.getMonth(), 1);
 
             if (student.is_suspended) {
-                // --- Logic for SUSPENDED students ---
                 if (startOfNextDueMonth.getTime() === startOfClickedMonth.getTime()) {
-                    // Rule 4: Suspended and due date is in the current month/year -> Suspended List
                     suspendedStudents.push({ id: student.student_id, name: student.name });
                 } else if (startOfNextDueMonth > startOfClickedMonth) {
-                    // Rule 3B: Suspended but paid ahead -> Paid List
                     paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
                 }
-                // Rule 5 (Implicit): If suspended and due date is in the past, they are ignored.
 
             } else {
-                // --- Logic for ACTIVE students ---
                 if (startOfNextDueMonth <= startOfClickedMonth) {
-                    // Rule 2: Active and due date is now or in the past -> Pending List
                     pendingStudents.push({ 
                         id: student.student_id, 
                         name: student.name, 
@@ -526,8 +444,14 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
                         plan_duration_months: student.plan_duration_months
                     });
                 } else { // startOfNextDueMonth > startOfClickedMonth
-                    // Rule 3A: Active and paid ahead -> Paid List
-                    paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
+                    // --- THIS IS THE NEW LOGIC BLOCK ---
+                    const admissionDateObj = new Date(student.admission_date);
+                    const startOfAdmissionMonth = new Date(admissionDateObj.getFullYear(), admissionDateObj.getMonth(), 1);
+
+                    if (startOfAdmissionMonth <= startOfClickedMonth) {
+                        paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
+                    }
+                    // If the admission month is after the clicked month, the student is ignored.
                 }
             }
         });
@@ -702,159 +626,9 @@ app.put('/api/student-payment/:studentId/:date', authenticateToken, async (req, 
     }
 });
 
-// ADD STUDENT - Modified to upload to S3 first
-app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_photo', maxCount: 1 }, { name: 'id_proof', maxCount: 1 }]), async (req, res) => {
-    const { name, admissionDate, mobile_no, address, grade, admissionFee, feeAmount, planDuration } = req.body;
-    const studentPhotoFile = req.files?.['student_photo']?.[0];
-    const idProofFile = req.files?.['id_proof']?.[0];
-    const loggedInUserId = req.user.id;
-    
-    if (!name || !admissionDate || !mobile_no) {
-        return res.status(400).json({ error: 'Missing required fields: name, admissionDate, mobile_no.' });
-    }
-    if (!isValidDate(admissionDate)) {
-        return res.status(400).json({ error: 'Invalid admission date format. Use YYY-MM-DD.' });
-    }
-
-    let client;
-    try {
-        let photoUrl = null;
-        if (studentPhotoFile) {
-            photoUrl = await uploadFileToS3(studentPhotoFile.buffer, studentPhotoFile.originalname, studentPhotoFile.mimetype);
-        }
-        let idProofUrl = null;
-        if (idProofFile) {
-            idProofUrl = await uploadFileToS3(idProofFile.buffer, idProofFile.originalname, idProofFile.mimetype);
-        }
-
-        client = await pool.connect();
-        await client.query('BEGIN');
-
-        const isSpecialStudent = !!(feeAmount && planDuration);
-        const monthsInPlan = isSpecialStudent ? parseInt(planDuration, 10) : 1;
-        
-        let regularFeeAmount;
-        if (isSpecialStudent) {
-            regularFeeAmount = parseFloat(feeAmount);
-        } else {
-            const ownerResult = await client.query('SELECT set_payment FROM student_management.credentials WHERE id = $1', [loggedInUserId]);
-            regularFeeAmount = parseFloat(ownerResult.rows[0]?.set_payment) || 0;
-        }
-
-        const nextDueDate = new Date(admissionDate);
-        nextDueDate.setMonth(nextDueDate.getMonth() + monthsInPlan);
-        const nextDueDateString = nextDueDate.toISOString().slice(0, 10);
-        
-        const studentQueryText = `
-            INSERT INTO student_management.students
-              (name, grade, admission_date, mobile_no, address, student_photo, id_proof, user_id, fee_amount, plan_duration_months, is_special, next_due_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            RETURNING id, name, admission_date;
-        `;
-        const studentValues = [
-            name.trim(), grade?.trim(), admissionDate, mobile_no, address?.trim(),
-            photoUrl, idProofUrl, loggedInUserId,
-            isSpecialStudent ? parseFloat(feeAmount) : null,
-            monthsInPlan, isSpecialStudent, nextDueDateString
-        ];
-        const studentResult = await client.query(studentQueryText, studentValues);
-        const newStudent = studentResult.rows[0];
-
-        const oneTimeAdmissionFee = parseFloat(admissionFee) || 0;
-
-        const moneyManagerQuery = `
-            INSERT INTO student_management.money_manager
-              (student_id, user_id, admission_date, next_due_date, plan_month, admission_fee, regular_fee)
-            VALUES ($1, $2, $3, $4, $5, $6, $7);
-        `;
-        const moneyManagerValues = [
-            newStudent.id, loggedInUserId, newStudent.admission_date,
-            nextDueDateString, monthsInPlan, oneTimeAdmissionFee, regularFeeAmount
-        ];
-        await client.query(moneyManagerQuery, moneyManagerValues);
-
-
-        // --- NEW LOGIC: Update the grand totals ---
-        // For new admissions, we will assume all payments (admission fee + first month's fee) are made in CASH.
-        // This can be changed later if needed.
-        let totalCashForDay = 0;
-        if (oneTimeAdmissionFee > 0) {
-            totalCashForDay += oneTimeAdmissionFee;
-        }
-        if (regularFeeAmount > 0) {
-            totalCashForDay += regularFeeAmount;
-        }
-
-        // Call the new helper function to update the total_money table
-        if (totalCashForDay > 0) {
-            await updateDailyGrandTotals(client, loggedInUserId, newStudent.admission_date, totalCashForDay, 0);
-        }
-        // --- END OF NEW LOGIC ---
-
-
-        // This part below handles the detailed transaction log in the 'student' table.
-        // It's still necessary for tracking individual payments.
-        if (oneTimeAdmissionFee > 0) {
-            await client.query(
-                `INSERT INTO student_management.student (name, date, user_id, cash, amount_paid, amount_for_new) VALUES ($1, $2, $3, TRUE, $4, $4)`,
-                [newStudent.name, newStudent.admission_date, loggedInUserId, oneTimeAdmissionFee]
-            );
-        }
-        if (regularFeeAmount > 0) {
-            const paymentQuery = `
-                INSERT INTO student_management.student (name, date, user_id, cash, amount_paid)
-                VALUES ($1, $2, $3, TRUE, $4)
-                ON CONFLICT (name, date, user_id) DO UPDATE SET
-                    amount_paid = student_management.student.amount_paid + EXCLUDED.amount_paid,
-                    cash = TRUE;
-            `;
-            await client.query(paymentQuery, [newStudent.name, newStudent.admission_date, loggedInUserId, regularFeeAmount]);
-        }
-        
-        await client.query('COMMIT');
-        res.status(201).json(studentResult.rows[0]);
-
-    } catch (err) {
-        if (client) { await client.query('ROLLBACK'); }
-        console.error('Error adding student:', err);
-        res.status(500).json({ error: 'Failed to add new student.', details: err.message });
-    } finally {
-        if (client) client.release();
-    }
-});
-
-
-
-// GET SINGLE STUDENT - Modified to return S3 URLs
- app.get('/api/students/:id', authenticateToken, async (req, res) => {
-     const studentId = parseInt(req.params.id, 10);
-     const loggedInUserId = req.user.id;
-     if (isNaN(studentId)) {
-         return res.status(400).json({ error: 'Invalid student ID.' });
-     }
-     let client;
-     try {
-         client = await pool.connect();
-         const queryText = `
-             SELECT id, name, grade, admission_date, mobile_no, address, user_id,
-                    student_photo, id_proof
-             FROM student_management.students
-             WHERE id = $1 AND user_id = $2 
-         `;
-         const result = await client.query(queryText, [studentId, loggedInUserId]);
-         if (result.rows[0]) {
-              res.json(result.rows[0]);
-         } else {
-             res.status(404).json({ error: 'Student not found or you do not have permission to access this student.' });
-         }
-     } catch (err) {
-         res.status(500).json({ error: 'Failed to fetch student.', details: err.message });
-     } finally {
-         if (client) client.release();
-     }
- });
-
-// EDIT STUDENT - Modified to upload to S3
+// =====================================================================
+// === THE SINGLE CORRECTED 'ADD STUDENT' ROUTE ===
+// =====================================================================
 app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_photo', maxCount: 1 }, { name: 'id_proof', maxCount: 1 }]), async (req, res) => {
     const { name, admissionDate, mobile_no, address, grade, admissionFee, feeAmount, planDuration } = req.body;
     const studentPhotoFile = req.files?.['student_photo']?.[0];
@@ -919,14 +693,11 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
               (student_id, user_id, admission_date, next_due_date, plan_month, admission_fee, regular_fee)
             VALUES ($1, $2, $3, $4, $5, $6, $7);
         `;
-        const moneyManagerValues = [
-            newStudent.id, loggedInUserId, newStudent.admission_date,
-            nextDueDateString, monthsInPlan, oneTimeAdmissionFee, regularFeeAmountPerMonth
-        ];
-        await client.query(moneyManagerValues);
-
-        // --- CORRECTED AGGREGATION AND DATE LOGIC ---
-
+        const moneyManagerValues = [ newStudent.id, loggedInUserId, newStudent.admission_date, nextDueDateString, monthsInPlan, oneTimeAdmissionFee, regularFeeAmountPerMonth ];
+        await client.query(moneyManagerQuery, moneyManagerValues);
+        
+        // --- FINAL CORRECT LOGIC FOR total_money ---
+        
         // 1. Aggregate ALL money collected in this transaction.
         const totalRegularFeeCollected = regularFeeAmountPerMonth * monthsInPlan;
         const totalCashForDay = oneTimeAdmissionFee + totalRegularFeeCollected;
@@ -945,7 +716,6 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
         
         // --- END OF CORRECTIONS ---
 
-
         // The detailed transaction log in the 'student' table still uses the admissionDate.
         if (oneTimeAdmissionFee > 0) {
             await client.query(
@@ -954,6 +724,7 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
             );
         }
         if (regularFeeAmountPerMonth > 0) {
+            // Only log the first month's payment in the detailed log, as the others are future-dated.
             const paymentQuery = `
                 INSERT INTO student_management.student (name, date, user_id, cash, amount_paid)
                 VALUES ($1, $2, $3, TRUE, $4)
@@ -976,6 +747,35 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
     }
 });
 
+
+// GET SINGLE STUDENT - Modified to return S3 URLs
+ app.get('/api/students/:id', authenticateToken, async (req, res) => {
+     const studentId = parseInt(req.params.id, 10);
+     const loggedInUserId = req.user.id;
+     if (isNaN(studentId)) {
+         return res.status(400).json({ error: 'Invalid student ID.' });
+     }
+     let client;
+     try {
+         client = await pool.connect();
+         const queryText = `
+             SELECT id, name, grade, admission_date, mobile_no, address, user_id,
+                    student_photo, id_proof
+             FROM student_management.students
+             WHERE id = $1 AND user_id = $2 
+         `;
+         const result = await client.query(queryText, [studentId, loggedInUserId]);
+         if (result.rows[0]) {
+              res.json(result.rows[0]);
+         } else {
+             res.status(404).json({ error: 'Student not found or you do not have permission to access this student.' });
+         }
+     } catch (err) {
+         res.status(500).json({ error: 'Failed to fetch student.', details: err.message });
+     } finally {
+         if (client) client.release();
+     }
+ });
 
 
  app.get('/api/admin/users', authenticateToken, isAdmin, async (req, res) => {
