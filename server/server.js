@@ -48,7 +48,7 @@ const port = process.env.PORT || 5000;
 const host = '0.0.0.0';
 
 const allowedOrigins = [
-    'https://d28gnj3ee0v7hm.cloudfront.net',
+    'https://d7ev4pcik9hdv.cloudfront.net',
     'http://localhost:3000'
 ];
 const corsOptions = {
