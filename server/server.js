@@ -84,6 +84,13 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
+function getLiveDateString() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 // --- Helper Functions & Middleware ---
 
 async function updateDailyGrandTotals(client, userId, date, cashAmount = 0, upiAmount = 0) {
@@ -291,17 +298,16 @@ app.get('/api/students', authenticateToken, async (req, res) => {
     try {
         const loggedInUserId = req.user.id;
         client = await pool.connect();
+        // CORRECTED: This query now joins with money_manager to get the true suspension status.
         const result = await client.query(`
             SELECT 
-                s.id, s.name, s.grade, s.admission_date, s.mobile_no, s.address, s.user_id,
-                s.student_photo, s.id_proof,
-                EXISTS (
-                    SELECT 1 
-                    FROM student_management.student p 
-                    WHERE p.name = s.name AND p.user_id = s.user_id AND p.suspend = TRUE
-                ) AS is_suspended
+                s.id, s.name, s.grade, s.admission_date, s.mobile_no, 
+                s.address, s.user_id, s.student_photo, s.id_proof,
+                mm.is_suspended
             FROM 
                 student_management.students s
+            LEFT JOIN 
+                student_management.money_manager mm ON s.id = mm.student_id
             WHERE 
                 s.user_id = $1
             ORDER BY 
@@ -310,11 +316,13 @@ app.get('/api/students', authenticateToken, async (req, res) => {
         
         res.json(result.rows);
     } catch (err) {
+        console.error('Error fetching students:', err);
         res.status(500).json({ error: 'Failed to fetch students' });
     } finally {
         if (client) client.release();
     }
 });
+
 
 // SEARCH STUDENTS - Modified to return S3 URLs
 app.get('/api/students/search', authenticateToken, async (req, res) => {
@@ -391,18 +399,19 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
     try {
         client = await pool.connect();
         
-        // This query now also selects admission_date to apply the new filter
         const query = `
             WITH student_plans AS (
                 SELECT
-                    s.id AS student_id,
-                    s.name,
-                    s.is_special,
-                    s.admission_date, -- <-- NEWLY ADDED
-                    mm.regular_fee AS fee_amount,
-                    mm.plan_month AS plan_duration_months,
-                    mm.next_due_date,
-                    mm.is_suspended
+                    s.id AS student_id, s.name, s.is_special, s.admission_date,
+                    mm.regular_fee AS fee_amount, mm.plan_month AS plan_duration_months,
+                    mm.next_due_date, mm.is_suspended,
+                    EXISTS (
+                        SELECT 1 FROM student_management.whatsapp_log wl
+                        WHERE wl.student_name = s.name AND wl.user_id = s.user_id
+                          AND wl.status = 'sent'
+                          AND wl.sent_on >= (mm.next_due_date - (mm.plan_month * INTERVAL '1 month'))
+                          AND wl.sent_on < mm.next_due_date
+                    ) AS has_been_reminded_today
                 FROM
                     student_management.students s
                 JOIN
@@ -427,31 +436,33 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
             const nextDueDateObj = new Date(student.next_due_date);
             const startOfNextDueMonth = new Date(nextDueDateObj.getFullYear(), nextDueDateObj.getMonth(), 1);
 
+            // --- THIS IS THE CORRECTED LOGIC BLOCK ---
             if (student.is_suspended) {
-                if (startOfNextDueMonth.getTime() === startOfClickedMonth.getTime()) {
+                if (startOfNextDueMonth <= startOfClickedMonth) {
+                    // If suspended and their due date is in the past or current month, add to suspended list.
                     suspendedStudents.push({ id: student.student_id, name: student.name });
-                } else if (startOfNextDueMonth > startOfClickedMonth) {
+                } else {
+                    // If suspended but paid ahead, add to paid list.
                     paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
                 }
-
             } else {
+                // This is the logic for active students, which remains the same.
                 if (startOfNextDueMonth <= startOfClickedMonth) {
                     pendingStudents.push({ 
                         id: student.student_id, 
                         name: student.name, 
                         is_special: student.is_special,
                         fee_amount: student.fee_amount,
-                        plan_duration_months: student.plan_duration_months
+                        plan_duration_months: student.plan_duration_months,
+                        has_been_reminded_today: student.has_been_reminded_today
                     });
-                } else { // startOfNextDueMonth > startOfClickedMonth
-                    // --- THIS IS THE NEW LOGIC BLOCK ---
+                } else {
                     const admissionDateObj = new Date(student.admission_date);
                     const startOfAdmissionMonth = new Date(admissionDateObj.getFullYear(), admissionDateObj.getMonth(), 1);
 
                     if (startOfAdmissionMonth <= startOfClickedMonth) {
                         paidStudents.push({ id: student.student_id, name: student.name, paymentType: 'paid_ahead' });
                     }
-                    // If the admission month is after the clicked month, the student is ignored.
                 }
             }
         });
@@ -465,6 +476,7 @@ app.get('/api/students/manageable-on-date/:date', authenticateToken, async (req,
         if (client) client.release();
     }
 });
+
 
 
  app.put('/api/student-payment-status/:date/:studentName', authenticateToken, async (req, res) => {
@@ -832,40 +844,34 @@ app.post('/api/students', authenticateToken, upload.fields([{ name: 'student_pho
 app.get('/api/calendar/status-summary', authenticateToken, async (req, res) => {
     const loggedInUserId = req.user.id;
     const { year, month } = req.query;
+
     if (!year || !month || isNaN(parseInt(year)) || isNaN(parseInt(month))) {
         return res.status(400).json({ error: 'Year and month query parameters are required.' });
     }
+
     const yearInt = parseInt(year);
     const monthInt = parseInt(month);
-    if (monthInt < 1 || monthInt > 12) {
-        return res.status(400).json({ error: 'Month must be between 1 and 12.' });
-    }
+
     let client;
     try {
         client = await pool.connect();
-        const pendingQuery = `
-            WITH suspended_students AS (
-                SELECT DISTINCT name FROM student_management.student
-                WHERE user_id = $3 AND suspend = TRUE
-            ),
-            monthly_fee_dates AS (
-                SELECT s.name, make_date($1, $2, EXTRACT(DAY FROM s.admission_date)::int) AS fee_date_in_month
-                FROM student_management.students s
-                WHERE s.user_id = $3
-                    AND s.admission_date <= (make_date($1, $2, 1) + INTERVAL '1 month' - INTERVAL '1 day')
-                    AND s.name NOT IN (SELECT name FROM suspended_students)
-            )
-            SELECT EXTRACT(DAY FROM m.fee_date_in_month) AS day
-            FROM monthly_fee_dates m
-            LEFT JOIN student_management.student p
-            ON m.name = p.name AND p.date = m.fee_date_in_month AND p.user_id = $3
-            WHERE m.fee_date_in_month < CURRENT_DATE + INTERVAL '1 day'
-                AND (p.name IS NULL OR (p.cash = FALSE AND p.online = FALSE AND p.suspend = FALSE))
-            GROUP BY day ORDER BY day;
+
+        // This new query implements the final logic correctly and efficiently.
+        const query = `
+            SELECT DISTINCT EXTRACT(DAY FROM next_due_date) AS day
+            FROM student_management.money_manager
+            WHERE user_id = $1
+              AND is_suspended = FALSE
+              AND DATE_TRUNC('month', next_due_date) <= make_date($2, $3, 1);
         `;
-        const pendingResult = await client.query(pendingQuery, [yearInt, monthInt, loggedInUserId]);
-        const pendingDays = pendingResult.rows.map(row => parseInt(row.day, 10));
+        
+        const result = await client.query(query, [loggedInUserId, yearInt, monthInt]);
+
+        // Extract the day numbers from the result rows.
+        const pendingDays = result.rows.map(row => parseInt(row.day, 10));
+
         res.json({ pendingDays: pendingDays });
+
     } catch (err) {
         console.error('SERVER: Error fetching calendar status summary:', err);
         res.status(500).json({ error: 'Failed to fetch calendar status data', details: err.message });
@@ -878,7 +884,7 @@ app.get('/api/reminders/daily-status', authenticateToken, async (req, res) => {
     let client;
     try {
         client = await pool.connect();
-        const today = new Date().toISOString().slice(0, 10);
+        const today = getLiveDateString();
         const loggedInUserId = req.user.id;
         const dueQuery = `SELECT count(*) FROM student_management.students WHERE user_id = $1 AND next_due_date = $2`;
         const dueResult = await client.query(dueQuery, [loggedInUserId, today]);
@@ -1151,33 +1157,25 @@ app.put('/api/students/:studentId/make-active', authenticateToken, async (req, r
 
     try {
         client = await pool.connect();
-        await client.query('BEGIN');
 
-        const studentResult = await client.query(
-            'SELECT name FROM student_management.students WHERE id = $1 AND user_id = $2',
+        // CORRECTED: This now updates the is_suspended flag directly in the money_manager table.
+        const result = await client.query(
+            `UPDATE student_management.money_manager
+             SET is_suspended = FALSE, plan_updation_date = NOW()
+             WHERE student_id = $1 AND user_id = $2
+             RETURNING student_id;`,
             [studentId, loggedInUserId]
         );
 
-        if (studentResult.rows.length === 0) {
-            await client.query('ROLLBACK');
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Student not found or you do not have permission.' });
         }
-        const studentName = studentResult.rows[0].name;
-
-        const deleteResult = await client.query(
-            'DELETE FROM student_management.student WHERE name = $1 AND user_id = $2 AND suspend = TRUE',
-            [studentName, loggedInUserId]
-        );
-
-        await client.query('COMMIT');
 
         res.json({ 
-            message: `${studentName} has been made active.`,
-            recordsRemoved: deleteResult.rowCount 
+            message: `Student has been made active.`,
         });
 
     } catch (err) {
-        if (client) await client.query('ROLLBACK');
         console.error(`Error making student active (ID: ${studentId}):`, err);
         res.status(500).json({ error: 'Server error while reactivating student.', details: err.message });
     } finally {
@@ -1261,7 +1259,46 @@ app.get('/api/logs', authenticateToken, async (req, res) => {
     }
 });
 
+app.get('/api/dashboard/summary', authenticateToken, async (req, res) => {
+    const loggedInUserId = req.user.id;
+    const liveDate = getLiveDateString();
+    let client;
 
+    try {
+        client = await pool.connect();
+
+        // Query for "Pending Due Members"
+        const pendingQuery = `
+            SELECT COUNT(*) FROM student_management.money_manager
+            WHERE user_id = $1
+              AND is_suspended = FALSE
+              AND next_due_date <= $2;
+        `;
+        const pendingResult = await client.query(pendingQuery, [loggedInUserId, liveDate]);
+        const pendingCount = parseInt(pendingResult.rows[0].count, 10);
+
+        // Query for "Paid Today"
+        const paidTodayQuery = `
+            SELECT COUNT(*) FROM student_management.money_manager
+            WHERE user_id = $1
+              AND is_suspended = FALSE
+              AND DATE(plan_updation_date) = $2;
+        `;
+        const paidTodayResult = await client.query(paidTodayQuery, [loggedInUserId, liveDate]);
+        const paidTodayCount = parseInt(paidTodayResult.rows[0].count, 10);
+
+        res.json({
+            pendingCount: pendingCount,
+            paidTodayCount: paidTodayCount
+        });
+
+    } catch (err) {
+        console.error('Error fetching dashboard summary:', err);
+        res.status(500).json({ error: 'Failed to fetch dashboard summary', details: err.message });
+    } finally {
+        if (client) client.release();
+    }
+});
 // --- CRON JOB ---
 const cron = require('node-cron');
 async function sendAllDueReminders() {
@@ -1321,3 +1358,4 @@ process.on('SIGTERM', () => {
         });
     });
 });
+
